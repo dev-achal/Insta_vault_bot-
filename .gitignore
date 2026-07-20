@@ -9,4 +9,4 @@ firebase_credentials.json
 settings.json
 *.md
 bot.log
-manage_bot.sh
+manage_bot.shnode_modules/
