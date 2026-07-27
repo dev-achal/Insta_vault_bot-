@@ -7,7 +7,8 @@ firebase_credentials.json
 .DS_Store
 .vscode/
 settings.json
-*.md
 bot.log
-manage_bot.shnode_modules/
+manage_bot.sh
 node_modules/
+app_server/node_modules/
+app_server/dist/
