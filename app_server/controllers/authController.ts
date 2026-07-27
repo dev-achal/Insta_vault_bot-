@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import crypto from "crypto";
 import { db } from "../config/firebase";
 import { verifyPlayIntegrity } from "../services/integrityService";
+import { consumeNonce, NonceValidationError, storeNonce } from "../services/nonceService";
 import { createSession } from "../services/sessionService";
 
 /**
@@ -42,7 +43,9 @@ export const verifyVaultId = async (req: Request, res: Response): Promise<void> 
     // Vault ID exists — generate a secure one-time nonce (32 bytes, base64url encoded)
     const nonce = crypto.randomBytes(32).toString("base64url");
 
-    console.log(`[Auth] Vault ID verified: ${normalizedId} | Nonce generated`);
+    await storeNonce(nonce, normalizedId);
+
+    console.log(`[Auth] Vault ID verified: ${normalizedId} | Nonce generated and stored`);
 
     res.status(200).json({
       valid: true,
@@ -97,8 +100,15 @@ export const verifyIntegrity = async (req: Request, res: Response): Promise<void
 
     // 2. Verify Play Integrity token
     try {
-      await verifyPlayIntegrity(integrity_token);
+      const integrityVerdict = await verifyPlayIntegrity(integrity_token);
+      await consumeNonce(integrityVerdict.requestDetails?.nonce, normalizedId);
     } catch (integrityError: any) {
+      if (integrityError instanceof NonceValidationError) {
+        console.warn(`[Auth] Rejected nonce for ${normalizedId}: ${integrityError.message}`);
+        res.status(401).json({ error: "Unauthorized", message: "Invalid, expired, or already-used nonce." });
+        return;
+      }
+
       console.error(`[Auth] Integrity check failed for ${normalizedId}:`, integrityError.message);
       res.status(403).json({
         error: "Device integrity check failed",

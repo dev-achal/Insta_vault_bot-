@@ -65,7 +65,6 @@ export const verifyPlayIntegrity = async (integrityToken: string): Promise<Integ
   // ──────────────────────────────────────────────────────────────
   // PRODUCTION: Real Google Play Integrity API call
   // ──────────────────────────────────────────────────────────────
-  const projectNumber = config.gcpProjectNumber;
   const packageName = "com.instavault.app";
 
   // Authenticate using service account credentials (auto-detected from GOOGLE_APPLICATION_CREDENTIALS
@@ -95,6 +94,10 @@ export const verifyPlayIntegrity = async (integrityToken: string): Promise<Integ
 
   // Validate critical integrity signals
   const deviceVerdicts = verdict.deviceIntegrity?.deviceRecognitionVerdict || [];
+
+  if (verdict.requestDetails?.requestPackageName !== packageName) {
+    throw new Error("Play Integrity token package name does not match this application.");
+  }
 
   if (!deviceVerdicts.includes("MEETS_DEVICE_INTEGRITY")) {
     throw new Error(

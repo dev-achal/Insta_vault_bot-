@@ -9,7 +9,9 @@ export const config = {
   port: parseInt(process.env.APP_SERVER_PORT || process.env.PORT || "3000", 10),
   firebaseCredentialsPath: process.env.FIREBASE_CREDENTIALS_PATH || path.resolve(__dirname, "../../firebase_credentials.json"),
   gcpProjectNumber: process.env.GCP_PROJECT_NUMBER || "1040039421212",
-  nodeEnv: process.env.NODE_ENV || "development",
+  // A deployed server must fail closed by default. Development bypasses require
+  // an explicit NODE_ENV=development setting on a local machine.
+  nodeEnv: process.env.NODE_ENV || "production",
 };
 
 export const validateEnv = (): void => {
