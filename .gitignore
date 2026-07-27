@@ -10,3 +10,4 @@ settings.json
 *.md
 bot.log
 manage_bot.shnode_modules/
+node_modules/
