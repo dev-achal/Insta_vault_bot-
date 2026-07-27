@@ -15,6 +15,13 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+// Global Request Logger
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${new Date().toISOString()} | ${req.method} ${req.url} | IP: ${req.ip}`);
+  console.log(`[BODY] ${JSON.stringify(req.body)}`);
+  next();
+});
+
 // Mount Routes
 app.use("/auth", authRoutes);
 app.use("/telemetry", telemetryRoutes);
