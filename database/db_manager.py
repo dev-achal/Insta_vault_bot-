@@ -482,13 +482,6 @@ async def create_order(
     return _ref.id
 
 
-async def get_order(order_id: str) -> dict[str, Any] | None:
-    """Fetch a single order by document ID."""
-    db = get_db()
-    doc = await db.collection(ORDERS_COL).document(order_id).get()
-    return doc.to_dict() if doc.exists else None
-
-
 async def get_user_orders(
     user_id: int | str,
     limit: int = 10,
@@ -889,3 +882,25 @@ async def update_waitlist_entry(user_id: int | str, fields: dict[str, Any]) -> N
 async def activate_waitlist_user(user_id: int | str) -> None:
     """Mark a waitlist user as activated."""
     await update_waitlist_entry(user_id, {"activated": True})
+
+
+# ===========================================================================
+# ADMIN ANALYTICS & STATS
+# ===========================================================================
+
+async def get_total_users_count() -> int:
+    """
+    Fetch the total number of registered users from Firestore.
+    Uses Firestore Aggregation Query (count().get()) for high performance
+    and minimal billing cost (1 read per 1,000 index entries).
+    """
+    try:
+        db = get_db()
+        # Execute async count aggregation directly on the USERS_COL collection
+        results = await db.collection(USERS_COL).count().get()
+        if results and results[0]:
+            return int(results[0][0].value)
+        return 0
+    except Exception as e:
+        logger.error("Failed to fetch total users count from Firestore: %s", e)
+        return 0

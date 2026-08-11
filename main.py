@@ -28,6 +28,7 @@ from config import BOT_TOKEN, WEBAPP_HOST, WEBAPP_PORT, WEBHOOK_PATH, WEBHOOK_UR
 from database.firebase_init import init_firebase
 from database.redis_manager import close_redis, init_redis
 from handlers import admin, errors, main_menu, orders, referrals, start
+import admin_panel.dashboard
 from middlewares.throttling import ThrottlingMiddleware
 from middlewares.fsm_reset import FSMResetMiddleware
 
@@ -102,6 +103,7 @@ def _build_bot_and_dispatcher():
     dp.include_router(main_menu.router)
     dp.include_router(orders.router)
     dp.include_router(referrals.router)
+    dp.include_router(admin_panel.dashboard.router)
 
     # Anti-spam middleware — 3s cooldown on /start and account creation
     throttle = ThrottlingMiddleware()
