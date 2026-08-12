@@ -36,3 +36,37 @@ def admin_back_keyboard() -> InlineKeyboardMarkup:
             ]
         ]
     )
+
+
+def broadcast_menu_keyboard() -> InlineKeyboardMarkup:
+    """Sub-Menu keyboard for Broadcast Mode selection."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="📢 All Users Broadcast", callback_data="broadcast_mode_all"),
+            ],
+            [
+                InlineKeyboardButton(text="👤 Single User Broadcast", callback_data="broadcast_mode_single"),
+            ],
+            [
+                InlineKeyboardButton(text="⏰ Scheduled Cron Broadcast", callback_data="broadcast_mode_cron"),
+            ],
+            [
+                InlineKeyboardButton(text="🔙 Back to Admin Panel", callback_data="admin_dashboard"),
+            ],
+        ]
+    )
+
+
+def single_broadcast_confirm_keyboard() -> InlineKeyboardMarkup:
+    """Inline keyboard for Single User Broadcast Confirmation."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🚀 Send Direct Message", callback_data="confirm_single_broadcast"),
+            ],
+            [
+                InlineKeyboardButton(text="❌ Cancel Broadcast", callback_data="cancel_single_broadcast"),
+            ],
+        ]
+    )
