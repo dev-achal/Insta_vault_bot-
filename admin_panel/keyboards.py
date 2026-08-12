@@ -10,8 +10,12 @@ def admin_dashboard_keyboard() -> InlineKeyboardMarkup:
     """Main keyboard for the Admin Panel."""
     keyboard = [
         [
-            InlineKeyboardButton(text="👥 Total Users Count", callback_data="admin_users_count"),
-            InlineKeyboardButton(text="📢 Broadcast Message", callback_data="admin_broadcast"),
+            InlineKeyboardButton(text="👥 Total Users", callback_data="admin_users_count"),
+            InlineKeyboardButton(text="📢 Broadcast", callback_data="admin_broadcast"),
+        ],
+        [
+            InlineKeyboardButton(text="🆕 New Accounts Today", callback_data="admin_new_accounts_today"),
+            InlineKeyboardButton(text="⚡ Today Active Users", callback_data="admin_dau_today"),
         ],
         [
             InlineKeyboardButton(text="🔍 Manage User (Ban/Edit)", callback_data="admin_manage_user"),

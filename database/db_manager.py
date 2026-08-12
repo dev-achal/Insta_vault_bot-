@@ -343,6 +343,8 @@ async def create_user_transactional(
     )
     if result:
         await cache_user_data(user_id, result)
+        from database.redis_manager import record_new_account
+        asyncio.create_task(record_new_account(user_id))
         if referrer_uid:
             await invalidate_user_cache(referrer_uid)
     return result
@@ -958,3 +960,37 @@ async def get_banned_user_ids() -> set[str]:
     except Exception as e:
         logger.error("Failed to fetch banned user IDs from Firestore: %s", e)
         return set()
+
+
+async def get_today_new_accounts_count_firestore() -> int:
+    """
+    Fallback query: Fetch count of user accounts created today in IST from Firestore.
+    Uses count().get() aggregation on join_date >= today_midnight_ist.
+    """
+    try:
+        from google.cloud.firestore import FieldFilter
+        db = get_db()
+        today_start = get_ist_now().replace(hour=0, minute=0, second=0, microsecond=0)
+        query = db.collection(USERS_COL).where(filter=FieldFilter("join_date", ">=", today_start)).count()
+        results = await query.get()
+        if results and results[0]:
+            return int(results[0][0].value)
+        return 0
+    except Exception as e:
+        logger.error("Failed to fetch today's new accounts count from Firestore: %s", e)
+        return 0
+
+
+async def get_today_new_accounts_count() -> int:
+    """
+    Primary: Fetch today's new accounts count from Redis (0 DB Cost).
+    Fallback: Query Firestore aggregation if Redis count is 0 or unavailable.
+    """
+    try:
+        from database.redis_manager import get_today_new_accounts_count_redis
+        redis_count = await get_today_new_accounts_count_redis()
+        if redis_count > 0:
+            return redis_count
+    except Exception:
+        pass
+    return await get_today_new_accounts_count_firestore()

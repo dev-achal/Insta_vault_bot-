@@ -135,3 +135,62 @@ async def invalidate_user_cache(user_id: int | str) -> None:
                 await asyncio.sleep(0.15)
             else:
                 logger.error("Failed to invalidate cache for %s after %d attempts: %s", user_id, max_attempts, e)
+
+
+# ===========================================================================
+# ANALYTICS LAYER (DAU & Today New Accounts)
+# ===========================================================================
+
+async def record_user_activity(user_id: int | str) -> None:
+    """
+    Record a user's daily activity in Redis using SADD set (0-DB Cost DAU tracking).
+    Sets key TTL to 48 hours for auto-cleanup.
+    """
+    try:
+        from utils.helpers import get_ist_now
+        client = get_redis()
+        today_key = f"dau:{get_ist_now().strftime('%Y-%m-%d')}"
+        await client.sadd(today_key, str(user_id))
+        await client.expire(today_key, 172800)  # 48 hours TTL
+    except Exception as e:
+        logger.error("Failed to record DAU activity for %s: %s", user_id, e)
+
+
+async def get_today_active_users_count() -> int:
+    """Return total unique active users today from Redis DAU set."""
+    try:
+        from utils.helpers import get_ist_now
+        client = get_redis()
+        today_key = f"dau:{get_ist_now().strftime('%Y-%m-%d')}"
+        count = await client.scard(today_key)
+        return int(count) if count else 0
+    except Exception as e:
+        logger.error("Failed to fetch DAU count from Redis: %s", e)
+        return 0
+
+
+async def record_new_account(user_id: int | str) -> None:
+    """
+    Record a newly created account in Redis set for 0-DB Cost Today Accounts tracking.
+    """
+    try:
+        from utils.helpers import get_ist_now
+        client = get_redis()
+        today_key = f"new_users:{get_ist_now().strftime('%Y-%m-%d')}"
+        await client.sadd(today_key, str(user_id))
+        await client.expire(today_key, 172800)  # 48 hours TTL
+    except Exception as e:
+        logger.error("Failed to record new account in Redis for %s: %s", user_id, e)
+
+
+async def get_today_new_accounts_count_redis() -> int:
+    """Return new accounts count today from Redis set."""
+    try:
+        from utils.helpers import get_ist_now
+        client = get_redis()
+        today_key = f"new_users:{get_ist_now().strftime('%Y-%m-%d')}"
+        count = await client.scard(today_key)
+        return int(count) if count else 0
+    except Exception as e:
+        logger.error("Failed to fetch new accounts count from Redis: %s", e)
+        return 0

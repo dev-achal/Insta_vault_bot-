@@ -5,6 +5,7 @@ High-performance In-Memory Ban Check Middleware.
 Protects bot from banned users without incurring database reads on every request.
 """
 
+import asyncio
 import logging
 from typing import Any, Awaitable, Callable, Dict, Set
 
@@ -74,5 +75,9 @@ class BanCheckMiddleware(BaseMiddleware):
                     if event.message and hasattr(event.message, "edit_text"):
                         await event.message.edit_text(text)
                 return  # Terminate processing immediately
+
+            # Concurrently record DAU activity in Redis without delaying request processing
+            from database.redis_manager import record_user_activity
+            asyncio.create_task(record_user_activity(user_id))
 
         return await handler(event, data)

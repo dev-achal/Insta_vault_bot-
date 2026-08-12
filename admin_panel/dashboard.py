@@ -105,3 +105,89 @@ async def cb_admin_users_count(query: CallbackQuery) -> None:
         )
 
     await query.message.edit_text(text, reply_markup=admin_back_keyboard())
+
+
+# ===========================================================================
+# ADMIN FEATURE: Today New Accounts Analytics
+# ===========================================================================
+
+@router.callback_query(F.data == "admin_new_accounts_today")
+async def cb_admin_new_accounts_today(query: CallbackQuery) -> None:
+    """
+    Callback handler for '🆕 New Accounts Today' button.
+    Fetches real-time count of user accounts created today in IST.
+    """
+    if not query.message or not hasattr(query.message, 'edit_text'):
+        await query.answer()
+        return
+
+    user_id = query.from_user.id
+    if not is_admin(user_id):
+        await query.answer("⛔ Access Denied. You are not an Admin.", show_alert=True)
+        return
+
+    await query.answer()
+
+    from database.db_manager import get_today_new_accounts_count
+    from .keyboards import admin_back_keyboard
+
+    try:
+        count = await get_today_new_accounts_count()
+        text = (
+            "📅 <b>System Analytics — New Accounts Today</b>\n\n"
+            f"🆕 <b>New Accounts Created Today (IST):</b> <code>{count:,} Users</code>\n"
+            "🕒 <b>Calculation Window:</b> Since 12:00 AM IST\n"
+            "⚡ <b>Primary Engine:</b> Redis Set / Firestore Aggregation\n"
+            "🟢 <b>Status:</b> Active & Healthy"
+        )
+    except Exception as err:
+        logger.error("Error rendering new accounts count today: %s", err)
+        text = (
+            "⚠️ <b>System Error</b>\n\n"
+            "Failed to retrieve today's new accounts count."
+        )
+
+    await query.message.edit_text(text, reply_markup=admin_back_keyboard())
+
+
+# ===========================================================================
+# ADMIN FEATURE: Daily Active Users (DAU) Analytics
+# ===========================================================================
+
+@router.callback_query(F.data == "admin_dau_today")
+async def cb_admin_dau_today(query: CallbackQuery) -> None:
+    """
+    Callback handler for '⚡ Today Active Users' button.
+    Fetches real-time count of unique active users today from Redis (0 DB Cost).
+    """
+    if not query.message or not hasattr(query.message, 'edit_text'):
+        await query.answer()
+        return
+
+    user_id = query.from_user.id
+    if not is_admin(user_id):
+        await query.answer("⛔ Access Denied. You are not an Admin.", show_alert=True)
+        return
+
+    await query.answer()
+
+    from database.redis_manager import get_today_active_users_count
+    from .keyboards import admin_back_keyboard
+
+    try:
+        count = await get_today_active_users_count()
+        text = (
+            "⚡ <b>System Analytics — Daily Active Users (DAU)</b>\n\n"
+            f"🔥 <b>Unique Active Users Today:</b> <code>{count:,} Users</code>\n"
+            "📊 <b>Activity Scope:</b> Messages, Clicks, Orders & Starts\n"
+            "⚡ <b>Primary Engine:</b> Redis Daily Set (0 DB Cost)\n"
+            "🟢 <b>Status:</b> Active & Healthy"
+        )
+    except Exception as err:
+        logger.error("Error rendering DAU count today: %s", err)
+        text = (
+            "⚠️ <b>System Error</b>\n\n"
+            "Failed to retrieve DAU count from Redis."
+        )
+
+    await query.message.edit_text(text, reply_markup=admin_back_keyboard())
