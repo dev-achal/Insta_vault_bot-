@@ -30,8 +30,10 @@ from database.redis_manager import close_redis, init_redis
 from handlers import admin, errors, main_menu, orders, referrals, start
 import admin_panel.dashboard
 import admin_panel.broadcast
+import admin_panel.manage_user
 from middlewares.throttling import ThrottlingMiddleware
 from middlewares.fsm_reset import FSMResetMiddleware
+from middlewares.ban_check import BanCheckMiddleware, init_ban_cache
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -82,6 +84,12 @@ async def _verify_services(bot: Bot) -> None:
         logger.critical("❌ Redis Initialization FAILED: %s", e)
         sys.exit(1)
 
+    # 4. Initialize Banned Users Cache (Zero DB Cost Middleware)
+    try:
+        await init_ban_cache()
+    except Exception as e:
+        logger.error("⚠️ Failed to initialize ban cache: %s", e)
+
 
 # ---------------------------------------------------------------------------
 # Shared bot / dispatcher factory
@@ -106,6 +114,12 @@ def _build_bot_and_dispatcher():
     dp.include_router(referrals.router)
     dp.include_router(admin_panel.dashboard.router)
     dp.include_router(admin_panel.broadcast.router)
+    dp.include_router(admin_panel.manage_user.router)
+
+    # Ban check middleware — Zero-cost in-memory ban enforcement
+    ban_check = BanCheckMiddleware()
+    dp.message.outer_middleware(ban_check)
+    dp.callback_query.outer_middleware(ban_check)
 
     # Anti-spam middleware — 3s cooldown on /start and account creation
     throttle = ThrottlingMiddleware()

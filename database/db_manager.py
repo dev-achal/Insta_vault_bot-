@@ -920,3 +920,41 @@ async def get_all_user_ids() -> list[str]:
     except Exception as e:
         logger.error("Failed to stream user IDs from Firestore: %s", e)
         return []
+
+
+# ===========================================================================
+# BAN & SUSPENSION MANAGEMENT
+# ===========================================================================
+
+async def ban_user(user_id: int | str) -> None:
+    """Mark a user as banned in Firestore and invalidate cache."""
+    db = get_db()
+    uid = str(user_id)
+    await db.collection(USERS_COL).document(uid).update({"is_banned": True})
+    await invalidate_user_cache(uid)
+
+
+async def unban_user(user_id: int | str) -> None:
+    """Mark a user as active (unbanned) in Firestore and invalidate cache."""
+    db = get_db()
+    uid = str(user_id)
+    await db.collection(USERS_COL).document(uid).update({"is_banned": False})
+    await invalidate_user_cache(uid)
+
+
+async def get_banned_user_ids() -> set[str]:
+    """
+    Fetch all banned user IDs from Firestore using field filtering.
+    Used during startup to initialize the in-memory ban middleware cache.
+    """
+    try:
+        from google.cloud.firestore import FieldFilter
+        db = get_db()
+        banned_ids: set[str] = set()
+        query = db.collection(USERS_COL).where(filter=FieldFilter("is_banned", "==", True)).select([])
+        async for doc in query.stream():
+            banned_ids.add(str(doc.id))
+        return banned_ids
+    except Exception as e:
+        logger.error("Failed to fetch banned user IDs from Firestore: %s", e)
+        return set()

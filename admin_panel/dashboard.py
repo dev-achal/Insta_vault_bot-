@@ -105,13 +105,3 @@ async def cb_admin_users_count(query: CallbackQuery) -> None:
         )
 
     await query.message.edit_text(text, reply_markup=admin_back_keyboard())
-
-
-# ===========================================================================
-# UPCOMING ADMIN FEATURES (Placeholders)
-# ===========================================================================
-
-@router.callback_query(F.data == "admin_manage_user")
-async def cb_admin_features_coming_soon(query: CallbackQuery) -> None:
-    """Placeholder handler for upcoming admin features."""
-    await query.answer("🚀 This feature is coming soon!", show_alert=True)
