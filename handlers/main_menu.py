@@ -348,7 +348,7 @@ async def _render_profile_screen(
         return
 
     vault_id     = user_data.get("vault_id", "—")
-    join_date    = user_data.get("join_date")
+    join_date    = user_data.get("created_at") or user_data.get("join_date")
     total_orders = user_data.get("total_orders", 0)
     ref_count    = user_data.get("referral_count", 0)
     sparks       = user_data.get("spark_balance", 0)

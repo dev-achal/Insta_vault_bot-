@@ -178,6 +178,7 @@ def _build_default_user_data(
         "username": username or "",
         "vault_id": vault_id,
         "join_date": now,
+        "created_at": now,
         "status": "active",
 
         # Economy
@@ -965,16 +966,25 @@ async def get_banned_user_ids() -> set[str]:
 async def get_today_new_accounts_count_firestore() -> int:
     """
     Fallback query: Fetch count of user accounts created today in IST from Firestore.
-    Uses count().get() aggregation on join_date >= today_midnight_ist.
+    Uses count().get() aggregation on created_at (or join_date) >= today_midnight_ist.
     """
     try:
         from google.cloud.firestore import FieldFilter
         db = get_db()
         today_start = get_ist_now().replace(hour=0, minute=0, second=0, microsecond=0)
-        query = db.collection(USERS_COL).where(filter=FieldFilter("join_date", ">=", today_start)).count()
+        
+        # Primary filter on standardized created_at field
+        query = db.collection(USERS_COL).where(filter=FieldFilter("created_at", ">=", today_start)).count()
         results = await query.get()
-        if results and results[0]:
+        if results and results[0] and int(results[0][0].value) > 0:
             return int(results[0][0].value)
+
+        # Backwards-compatibility fallback on legacy join_date field
+        query_legacy = db.collection(USERS_COL).where(filter=FieldFilter("join_date", ">=", today_start)).count()
+        results_legacy = await query_legacy.get()
+        if results_legacy and results_legacy[0]:
+            return int(results_legacy[0][0].value)
+
         return 0
     except Exception as e:
         logger.error("Failed to fetch today's new accounts count from Firestore: %s", e)
