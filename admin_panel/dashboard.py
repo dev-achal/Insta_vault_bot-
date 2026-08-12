@@ -111,7 +111,7 @@ async def cb_admin_users_count(query: CallbackQuery) -> None:
 # UPCOMING ADMIN FEATURES (Placeholders)
 # ===========================================================================
 
-@router.callback_query(F.data.in_({"admin_broadcast", "admin_manage_user"}))
+@router.callback_query(F.data == "admin_manage_user")
 async def cb_admin_features_coming_soon(query: CallbackQuery) -> None:
     """Placeholder handler for upcoming admin features."""
     await query.answer("🚀 This feature is coming soon!", show_alert=True)

@@ -29,6 +29,7 @@ from database.firebase_init import init_firebase
 from database.redis_manager import close_redis, init_redis
 from handlers import admin, errors, main_menu, orders, referrals, start
 import admin_panel.dashboard
+import admin_panel.broadcast
 from middlewares.throttling import ThrottlingMiddleware
 from middlewares.fsm_reset import FSMResetMiddleware
 
@@ -104,6 +105,7 @@ def _build_bot_and_dispatcher():
     dp.include_router(orders.router)
     dp.include_router(referrals.router)
     dp.include_router(admin_panel.dashboard.router)
+    dp.include_router(admin_panel.broadcast.router)
 
     # Anti-spam middleware — 3s cooldown on /start and account creation
     throttle = ThrottlingMiddleware()

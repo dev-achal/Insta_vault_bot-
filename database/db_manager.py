@@ -904,3 +904,19 @@ async def get_total_users_count() -> int:
     except Exception as e:
         logger.error("Failed to fetch total users count from Firestore: %s", e)
         return 0
+
+
+async def get_all_user_ids() -> list[str]:
+    """
+    Stream all user IDs from Firestore using field projection select([]).
+    Minimizes network bandwidth and billing cost by requesting document keys only.
+    """
+    try:
+        db = get_db()
+        user_ids: list[str] = []
+        async for doc in db.collection(USERS_COL).select([]).stream():
+            user_ids.append(str(doc.id))
+        return user_ids
+    except Exception as e:
+        logger.error("Failed to stream user IDs from Firestore: %s", e)
+        return []
