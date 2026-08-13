@@ -18,7 +18,8 @@ def admin_dashboard_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="⚡ Today Active Users", callback_data="admin_dau_today"),
         ],
         [
-            InlineKeyboardButton(text="🔍 Manage User (Ban/Edit)", callback_data="admin_manage_user"),
+            InlineKeyboardButton(text="⚙️ Bot System Status", callback_data="admin_bot_status"),
+            InlineKeyboardButton(text="🔍 Manage User", callback_data="admin_manage_user"),
         ],
         [
             InlineKeyboardButton(text="🔙 Back to Bot", callback_data="nav_dashboard")
@@ -67,6 +68,42 @@ def single_broadcast_confirm_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(text="❌ Cancel Broadcast", callback_data="cancel_single_broadcast"),
+            ],
+        ]
+    )
+
+
+def cron_time_presets_keyboard() -> InlineKeyboardMarkup:
+    """Preset time delay options for Scheduled Cron Broadcast."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="⏱️ In 10 Mins", callback_data="cron_time:10m"),
+                InlineKeyboardButton(text="⏱️ In 1 Hour", callback_data="cron_time:1h"),
+            ],
+            [
+                InlineKeyboardButton(text="⏱️ In 6 Hours", callback_data="cron_time:6h"),
+                InlineKeyboardButton(text="⏱️ In 24 Hours", callback_data="cron_time:24h"),
+            ],
+            [
+                InlineKeyboardButton(text="✏️ Custom Minutes", callback_data="cron_time:custom"),
+            ],
+            [
+                InlineKeyboardButton(text="❌ Cancel Schedule", callback_data="cron_time:cancel"),
+            ],
+        ]
+    )
+
+
+def cron_confirm_keyboard() -> InlineKeyboardMarkup:
+    """Confirmation keyboard for Scheduled Cron Broadcast."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="⏰ Confirm Scheduled Broadcast", callback_data="confirm_cron_broadcast"),
+            ],
+            [
+                InlineKeyboardButton(text="❌ Cancel Schedule", callback_data="cancel_cron_broadcast"),
             ],
         ]
     )

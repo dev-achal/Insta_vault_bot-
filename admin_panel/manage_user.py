@@ -165,6 +165,12 @@ async def cb_ban_user(query: CallbackQuery) -> None:
         return
 
     target_id = query.data.split(":")[1]
+    try:
+        if int(target_id) in config.ADMIN_IDS:
+            await query.answer("⛔ You cannot ban an Admin account!", show_alert=True)
+            return
+    except ValueError:
+        pass
 
     try:
         await ban_user(target_id)

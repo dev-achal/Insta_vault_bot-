@@ -31,6 +31,7 @@ from handlers import admin, errors, main_menu, orders, referrals, start
 import admin_panel.dashboard
 import admin_panel.broadcast
 import admin_panel.manage_user
+import admin_panel.bot_status
 from middlewares.throttling import ThrottlingMiddleware
 from middlewares.fsm_reset import FSMResetMiddleware
 from middlewares.ban_check import BanCheckMiddleware, init_ban_cache
@@ -115,6 +116,7 @@ def _build_bot_and_dispatcher():
     dp.include_router(admin_panel.dashboard.router)
     dp.include_router(admin_panel.broadcast.router)
     dp.include_router(admin_panel.manage_user.router)
+    dp.include_router(admin_panel.bot_status.router)
 
     # Ban check middleware — Zero-cost in-memory ban enforcement
     ban_check = BanCheckMiddleware()

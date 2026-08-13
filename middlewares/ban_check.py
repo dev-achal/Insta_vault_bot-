@@ -23,9 +23,10 @@ BANNED_USER_CACHE: Set[str] = set()
 
 async def init_ban_cache() -> None:
     """Initialize the in-memory ban cache from Firestore on startup."""
-    global BANNED_USER_CACHE
     try:
-        BANNED_USER_CACHE = await get_banned_user_ids()
+        banned_ids = await get_banned_user_ids()
+        BANNED_USER_CACHE.clear()
+        BANNED_USER_CACHE.update(banned_ids)
         logger.info("✅ Banned user cache initialized with %d banned users.", len(BANNED_USER_CACHE))
     except Exception as e:
         logger.error("Failed to initialize ban cache: %s", e)
