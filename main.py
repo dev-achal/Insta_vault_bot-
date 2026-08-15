@@ -113,6 +113,8 @@ def _build_bot_and_dispatcher():
     dp.include_router(main_menu.router)
     dp.include_router(orders.router)
     dp.include_router(referrals.router)
+    from handlers import tasks_shortener
+    dp.include_router(tasks_shortener.router)
     dp.include_router(admin_panel.dashboard.router)
     dp.include_router(admin_panel.broadcast.router)
     dp.include_router(admin_panel.manage_user.router)

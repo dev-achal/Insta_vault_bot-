@@ -38,7 +38,7 @@ from database.db_manager import (
     user_exists,
 )
 from keyboards.inline import (
-    mission_keyboard,
+    mission_center_keyboard,
     onboarding_beat1_keyboard,
     onboarding_beat2_keyboard,
     onboarding_beat3_keyboard,
@@ -77,6 +77,14 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
     # ── Returning user: clear any stale FSM state + go straight to dashboard
     if await user_exists(user_id):
         await state.clear()
+
+        # ── Deep-link routing for returning users ─────────────────────
+        if message.text and len(message.text.split()) > 1:
+            deep_arg = message.text.split(maxsplit=1)[1].strip()
+            if deep_arg.startswith("sl_"):
+                from handlers.tasks_shortener import handle_shortener_deeplink
+                await handle_shortener_deeplink(message, user_id, deep_arg)
+                return
 
         # Route returning users straight to the dashboard
         from handlers.main_menu import show_dashboard
@@ -276,27 +284,21 @@ async def cb_nav_dashboard(query: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "nav_mission")
 async def cb_nav_mission(query: CallbackQuery) -> None:
+    """Mission Center — multi-task hub showing all available daily tasks."""
     if not query.message or not hasattr(query.message, 'edit_text'):
         await query.answer()
         return
-    """
-    Mission screen from dashboard inline button — edits in-place.
-    Now shows proper Phase 3 content (fixed from Phase 1 placeholder).
-    """
     await query.answer()
 
     await query.message.edit_text(
         "━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "⚡ <b>AAJ KA MISSION</b>\n"
+        "⚡ <b>MISSION CENTER</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "🎯 <b>Mission:</b> \"The Daily Grind\"\n"
-        "Reward:  🪙 <b>400 Sparks</b>\n\n"
-        "📋 <b>Kya karna hai:</b>\n"
-        "→ InstaVault App kholo\n"
-        "→ 2 mini-tasks complete karo\n"
-        "→ Sparks automatically credit ho jayenge\n"
+        "Apne manpasand task complete karke Sparks kamao!\n\n"
+        "1️⃣ <b>InstaVault App Task</b> — 400 Sparks\n"
+        "2️⃣ <b>Shortlink Task</b> — 500 Sparks\n"
         "━━━━━━━━━━━━━━━━━━━━━━━",
-        reply_markup=mission_keyboard(),
+        reply_markup=mission_center_keyboard(),
     )
 
 

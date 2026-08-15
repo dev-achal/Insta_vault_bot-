@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     SMM_API_URL: str = ""
     SMM_API_KEY: str = ""
     
+    # GPLinks Shortener (Mission System)
+    GPLINKS_API_URL: str = ""
+    GPLINKS_API_KEY: str = ""
+    
     # Webhook & Server
     REPLIT_DEV_DOMAIN: Optional[str] = None
     WEBHOOK_URL: Optional[str] = None
@@ -40,6 +44,8 @@ ADMIN_IDS = [int(x.strip()) for x in settings.ADMIN_IDS.split(",") if x.strip().
 ADMIN_GROUP_ID = settings.ADMIN_GROUP_ID
 SMM_API_URL = settings.SMM_API_URL
 SMM_API_KEY = settings.SMM_API_KEY
+GPLINKS_API_URL = settings.GPLINKS_API_URL
+GPLINKS_API_KEY = settings.GPLINKS_API_KEY
 
 REDIS_URL = settings.REDIS_URL
 
@@ -62,6 +68,8 @@ if FIREBASE_CREDENTIALS_PATH == "firebase_credentials.json":
 WELCOME_BONUS = 300
 DAILY_MISSION_REWARD = 400
 AD_WATCH_REWARD = 150
+SHORTENER_TASK_REWARD = 500
+SHORTENER_TOKEN_TTL = 1800   # 30 minutes
 MYSTERY_BOX_MIN = 25
 MYSTERY_BOX_MAX = 2000
 SPARK_EXPIRY_DAYS = 90

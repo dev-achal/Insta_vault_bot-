@@ -48,7 +48,7 @@ from keyboards.inline import (
     dashboard_keyboard,
     help_keyboard,
     leaderboard_keyboard,
-    mission_keyboard,
+    mission_center_keyboard,
     mystery_box_result_keyboard,
     order_history_keyboard,
     order_keyboard_empty,
@@ -201,16 +201,13 @@ async def cb_go_dashboard(query: CallbackQuery) -> None:
 async def cmd_mission(message: Message) -> None:
     await message.answer(
         "━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "⚡ <b>AAJ KA MISSION</b>\n"
+        "⚡ <b>MISSION CENTER</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "🎯 <b>Mission:</b> \"The Daily Grind\"\n"
-        "Reward:  🪙 <b>400 Sparks</b>\n\n"
-        "📋 <b>Kya karna hai:</b>\n"
-        "→ InstaVault App kholo\n"
-        "→ 2 mini-tasks complete karo\n"
-        "→ Sparks automatically credit ho jayenge\n"
+        "Apne manpasand task complete karke Sparks kamao!\n\n"
+        "1️⃣ <b>InstaVault App Task</b> — 400 Sparks\n"
+        "2️⃣ <b>Shortlink Task</b> — 500 Sparks\n"
         "━━━━━━━━━━━━━━━━━━━━━━━",
-        reply_markup=mission_keyboard(),
+        reply_markup=mission_center_keyboard(),
     )
 
 

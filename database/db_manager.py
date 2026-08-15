@@ -197,6 +197,9 @@ def _build_default_user_data(
         # Mystery Box — None means never opened
         "last_mystery_box_date": None,
 
+        # Shortener Mission — IST date string ("2026-08-14") or None
+        "last_shortener_task_date": None,
+
         # Referrals
         "referral_code": referral_code,
         "referred_by": referrer_uid,
@@ -1004,3 +1007,38 @@ async def get_today_new_accounts_count() -> int:
     except Exception:
         pass
     return await get_today_new_accounts_count_firestore()
+
+
+# ===========================================================================
+# SHORTENER MISSION — Daily Task Completion
+# ===========================================================================
+
+async def complete_shortener_task(user_id: int, reward: int) -> None:
+    """Atomically credit shortener mission reward and stamp today's date.
+
+    Updates:
+      - spark_balance += reward   (via Increment sentinel)
+      - lifetime_sparks += reward (via Increment sentinel)
+      - last_shortener_task_date = today IST date string (e.g. "2026-08-14")
+
+    Also invalidates the Redis user cache so the dashboard
+    reflects the new balance immediately.
+    """
+    db = get_db()
+    today_str = get_ist_now().strftime("%Y-%m-%d")
+
+    await db.collection(USERS_COL).document(str(user_id)).update({
+        "spark_balance": Increment(reward),
+        "lifetime_sparks": Increment(reward),
+        "last_shortener_task_date": today_str,
+    })
+
+    await invalidate_user_cache(user_id)
+
+    # Log to immutable transaction ledger (audit trail)
+    await log_transaction(user_id, "earn", reward, "shortener_mission")
+
+    logger.info(
+        "Shortener task completed for user %s: +%d Sparks, date=%s",
+        user_id, reward, today_str,
+    )

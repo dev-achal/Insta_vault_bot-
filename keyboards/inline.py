@@ -106,7 +106,7 @@ def dashboard_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="🎯 Daily Mission (Earn 400 Sparks)",
+                    text="🎯 Mission Center (Earn Sparks)",
                     callback_data="nav_mission",
                 ),
             ],
@@ -140,21 +140,27 @@ def dashboard_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def mission_keyboard() -> InlineKeyboardMarkup:
-    """Mission screen."""
+def mission_center_keyboard() -> InlineKeyboardMarkup:
+    """Mission Center — multi-task hub with all available daily tasks."""
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="⬇️ Download APK",
+                    text="⬇️ InstaVault App (400 Sparks)",
                     callback_data="action_download_apk",
-                )
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔗 Shortlink Task (500 Sparks)",
+                    callback_data="task_shortener_start",
+                ),
             ],
             [
                 InlineKeyboardButton(
                     text="🏠 Back to Dashboard",
                     callback_data="go_dashboard",
-                )
+                ),
             ],
         ]
     )
