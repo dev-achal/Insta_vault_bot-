@@ -191,3 +191,52 @@ async def cb_admin_dau_today(query: CallbackQuery) -> None:
         )
 
     await query.message.edit_text(text, reply_markup=admin_back_keyboard())
+
+
+# ===========================================================================
+# ADMIN FEATURE: Shortener Mission Analytics
+# ===========================================================================
+
+@router.callback_query(F.data == "admin_shortener_stats")
+async def cb_admin_shortener_stats(query: CallbackQuery) -> None:
+    """
+    Callback handler for '📊 Shortener Stats' button.
+    Fetches real-time analytics from Redis (0 Firestore reads).
+    """
+    if not query.message or not hasattr(query.message, 'edit_text'):
+        await query.answer()
+        return
+
+    user_id = query.from_user.id
+    if not is_admin(user_id):
+        await query.answer("⛔ Access Denied. You are not an Admin.", show_alert=True)
+        return
+
+    await query.answer()
+
+    from database.redis_manager import get_shortener_stats
+    from .keyboards import admin_back_keyboard
+
+    try:
+        stats = await get_shortener_stats()
+        text = (
+            "📊 <b>Shortener Mission Analytics</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "📅 <b>Aaj (IST):</b>\n"
+            f"   ✅ Tasks Completed: <code>{stats['today_count']:,}</code>\n"
+            f"   💰 Sparks Given: <code>{stats['today_sparks']:,}</code>\n\n"
+            "📆 <b>All Time:</b>\n"
+            f"   ✅ Total Tasks: <code>{stats['total_count']:,}</code>\n"
+            f"   💰 Total Sparks: <code>{stats['total_sparks']:,}</code>\n"
+            f"   👥 Unique Users: <code>{stats['unique_users']:,}</code>\n\n"
+            "⚡ <b>Engine:</b> Redis Counters (0 DB Cost)\n"
+            "🟢 <b>Status:</b> Active & Healthy"
+        )
+    except Exception as err:
+        logger.error("Error rendering shortener stats: %s", err)
+        text = (
+            "⚠️ <b>System Error</b>\n\n"
+            "Failed to retrieve shortener mission analytics."
+        )
+
+    await query.message.edit_text(text, reply_markup=admin_back_keyboard())

@@ -194,3 +194,84 @@ async def get_today_new_accounts_count_redis() -> int:
     except Exception as e:
         logger.error("Failed to fetch new accounts count from Redis: %s", e)
         return 0
+
+
+# ===========================================================================
+# SHORTENER MISSION ANALYTICS (0 Firestore Cost)
+# ===========================================================================
+# Redis Keys:
+#   stats:shortener:total_count  → All-time task completions (INCRBY)
+#   stats:shortener:total_sparks → All-time Sparks awarded (INCRBY)
+#   stats:shortener:daily:{date} → Today's completions (INCRBY, TTL 48h)
+#   stats:shortener:daily_sparks:{date} → Today's Sparks (INCRBY, TTL 48h)
+#   stats:shortener:users        → Unique users who completed (HyperLogLog)
+# ===========================================================================
+
+_SL_PREFIX = "stats:shortener"
+
+
+async def record_shortener_completion(user_id: int | str, sparks: int) -> None:
+    """Record a shortener task completion in Redis analytics counters.
+
+    Called from db_manager.complete_shortener_task() after Firestore write.
+    All operations are fire-and-forget with fail-safe error handling.
+    """
+    try:
+        from utils.helpers import get_ist_now
+        client = get_redis()
+        today = get_ist_now().strftime("%Y-%m-%d")
+
+        daily_count_key = f"{_SL_PREFIX}:daily:{today}"
+        daily_sparks_key = f"{_SL_PREFIX}:daily_sparks:{today}"
+
+        pipe = client.pipeline(transaction=False)
+        pipe.incrby(f"{_SL_PREFIX}:total_count", 1)
+        pipe.incrby(f"{_SL_PREFIX}:total_sparks", sparks)
+        pipe.incrby(daily_count_key, 1)
+        pipe.incrby(daily_sparks_key, sparks)
+        pipe.pfadd(f"{_SL_PREFIX}:users", str(user_id))
+        # Auto-expire daily keys after 48 hours
+        pipe.expire(daily_count_key, 172800)
+        pipe.expire(daily_sparks_key, 172800)
+        await pipe.execute()
+    except Exception as e:
+        logger.error("Failed to record shortener stats for %s: %s", user_id, e)
+
+
+async def get_shortener_stats() -> dict[str, int]:
+    """Fetch all shortener analytics from Redis (0 Firestore reads).
+
+    Returns:
+        Dict with keys: total_count, total_sparks, today_count,
+        today_sparks, unique_users.
+    """
+    defaults = {
+        "total_count": 0,
+        "total_sparks": 0,
+        "today_count": 0,
+        "today_sparks": 0,
+        "unique_users": 0,
+    }
+    try:
+        from utils.helpers import get_ist_now
+        client = get_redis()
+        today = get_ist_now().strftime("%Y-%m-%d")
+
+        pipe = client.pipeline(transaction=False)
+        pipe.get(f"{_SL_PREFIX}:total_count")
+        pipe.get(f"{_SL_PREFIX}:total_sparks")
+        pipe.get(f"{_SL_PREFIX}:daily:{today}")
+        pipe.get(f"{_SL_PREFIX}:daily_sparks:{today}")
+        pipe.pfcount(f"{_SL_PREFIX}:users")
+        results = await pipe.execute()
+
+        return {
+            "total_count": int(results[0] or 0),
+            "total_sparks": int(results[1] or 0),
+            "today_count": int(results[2] or 0),
+            "today_sparks": int(results[3] or 0),
+            "unique_users": int(results[4] or 0),
+        }
+    except Exception as e:
+        logger.error("Failed to fetch shortener stats from Redis: %s", e)
+        return defaults

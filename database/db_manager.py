@@ -1038,6 +1038,10 @@ async def complete_shortener_task(user_id: int, reward: int) -> None:
     # Log to immutable transaction ledger (audit trail)
     await log_transaction(user_id, "earn", reward, "shortener_mission")
 
+    # Record in Redis analytics counters (0-cost admin panel stats)
+    from database.redis_manager import record_shortener_completion
+    await record_shortener_completion(user_id, reward)
+
     logger.info(
         "Shortener task completed for user %s: +%d Sparks, date=%s",
         user_id, reward, today_str,

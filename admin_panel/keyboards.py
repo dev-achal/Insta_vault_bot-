@@ -22,6 +22,9 @@ def admin_dashboard_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🔍 Manage User", callback_data="admin_manage_user"),
         ],
         [
+            InlineKeyboardButton(text="📊 Shortener Stats", callback_data="admin_shortener_stats"),
+        ],
+        [
             InlineKeyboardButton(text="🔙 Back to Bot", callback_data="nav_dashboard")
         ]
     ]
