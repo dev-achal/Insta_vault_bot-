@@ -23,6 +23,7 @@ def admin_dashboard_keyboard() -> InlineKeyboardMarkup:
         ],
         [
             InlineKeyboardButton(text="📊 Shortener Stats", callback_data="admin_shortener_stats"),
+            InlineKeyboardButton(text="📱 Update APK", callback_data="admin_upload_apk"),
         ],
         [
             InlineKeyboardButton(text="🔙 Back to Bot", callback_data="nav_dashboard")
@@ -107,6 +108,40 @@ def cron_confirm_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(text="❌ Cancel Schedule", callback_data="cancel_cron_broadcast"),
+            ],
+        ]
+    )
+
+
+def apk_upload_cancel_keyboard() -> InlineKeyboardMarkup:
+    """Keyboard shown while waiting for admin to send the APK file."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="❌ Cancel Upload",
+                    callback_data="admin_apk_cancel",
+                ),
+            ],
+        ]
+    )
+
+
+def apk_upload_confirm_keyboard() -> InlineKeyboardMarkup:
+    """Keyboard for APK upload confirmation step."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✅ Confirm & Update APK",
+                    callback_data="admin_apk_confirm",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="❌ Cancel Upload",
+                    callback_data="admin_apk_cancel",
+                ),
             ],
         ]
     )
