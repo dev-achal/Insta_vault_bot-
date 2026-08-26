@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "insta-vault-bot"
+version = "1.0.0"
+description = "Telegram Bot for Instagram Vault and Engagement System"
+readme = "docs/PROJECT_OVERVIEW.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Developer" }
+]
+
+# Modern Dependency Declaration (migrated from requirements.txt)
+dependencies = [
+    # 🤖 Core Telegram Bot Framework (Async)
+    "aiogram==3.13.1",
+    "aiohttp==3.10.10",
+
+    # 🔥 Database & Backend Services (Firestore)
+    "firebase-admin==6.5.0",
+
+    # ⚡ Caching & Redis Integration
+    "redis==8.0.0",
+    "upstash-redis==1.7.0",
+
+    # ⚙️ Configuration & Environment
+    "python-dotenv==1.0.1",
+    "pydantic==2.9.2",
+    "pydantic-settings==2.14.2",
+
+    # 🕒 Utilities & Timezones
+    "pytz==2024.1"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["instavault"]
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.github
+  | \.vscode
+  | app_server
+  | worker-leaderboard
+  | node_modules
+)/
+'''
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
