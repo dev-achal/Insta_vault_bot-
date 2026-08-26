@@ -26,8 +26,8 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
-from instavault import config as _config
-from instavault.config import (
+from instavault.core import config as _config
+from instavault.core.config import (
     BOT_TOKEN,
     WEBAPP_HOST,
     WEBAPP_PORT,

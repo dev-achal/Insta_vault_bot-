@@ -20,7 +20,7 @@ from typing import Any
 
 import aiohttp
 
-from instavault import config
+from instavault.core import config
 
 logger = logging.getLogger(__name__)
 

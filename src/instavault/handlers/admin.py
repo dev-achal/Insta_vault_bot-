@@ -20,7 +20,7 @@ import logging
 from aiogram import F, Router
 from aiogram.types import CallbackQuery
 
-from instavault import config
+from instavault.core import config
 from instavault.database.db_manager import (
     cancel_order_and_refund,
     get_order,
@@ -300,7 +300,10 @@ async def cb_admin_check_status(query: CallbackQuery) -> None:
         return
 
     # Hit SMM Panel API for live status
-    from instavault.services.smm_api import check_status as smm_check_status, SMMApiError
+    from instavault.services.smm_api import (
+        check_status as smm_check_status,
+        SMMApiError,
+    )
 
     try:
         api_data = await smm_check_status(smm_order_id)

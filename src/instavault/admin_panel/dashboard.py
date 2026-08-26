@@ -12,7 +12,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from instavault import config
+from instavault.core import config
 
 logger = logging.getLogger(__name__)
 router = Router(name="admin_panel")

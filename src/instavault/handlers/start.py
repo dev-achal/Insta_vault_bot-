@@ -28,8 +28,8 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
 
-from instavault import config
-from instavault.config import REFEREE_BONUS
+from instavault.core import config
+from instavault.constants.rewards import REFEREE_BONUS
 from instavault.database.db_manager import (
     create_user_transactional,
     get_user,
@@ -46,6 +46,7 @@ from instavault.keyboards.inline import (
     referral_keyboard,
 )
 from instavault.utils.helpers import get_ist_now
+from instavault.constants import rewards
 
 logger = logging.getLogger(__name__)
 router = Router(name="start")
@@ -84,7 +85,9 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
         if message.text and len(message.text.split()) > 1:
             deep_arg = message.text.split(maxsplit=1)[1].strip()
             if deep_arg.startswith("sl_"):
-                from instavault.handlers.tasks_shortener import handle_shortener_deeplink
+                from instavault.handlers.tasks_shortener import (
+                    handle_shortener_deeplink,
+                )
 
                 await handle_shortener_deeplink(message, user_id, deep_arg)
                 return
@@ -155,7 +158,7 @@ async def cb_beat_2(query: CallbackQuery, state: FSMContext) -> None:
         "<i>(Bilkul Free. Koi catch nahi.)</i>\n\n"
         "Abhi tere account mein hain:\n"
         "━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"⚡ <b>Sparks Balance: {config.WELCOME_BONUS} Sparks</b>\n"
+        f"⚡ <b>Sparks Balance: {rewards.WELCOME_BONUS} Sparks</b>\n"
         "<i>(Welcome Bonus — sirf tere liye!)</i>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━",
         reply_markup=onboarding_beat2_keyboard(ref_code),
@@ -247,7 +250,7 @@ async def cb_beat_3(query: CallbackQuery, state: FSMContext) -> None:
                     await query.bot.send_message(
                         int(referrer_uid),
                         "🎉 <b>Badaai ho!</b> Kisi ne tumhare link se InstaVault join kiya hai.\n"
-                        f"⚡ Tumhare account mein <b>{config.REFERRAL_JOIN_BONUS} Sparks</b> add ho gaye hain!",
+                        f"⚡ Tumhare account mein <b>{rewards.REFERRAL_JOIN_BONUS} Sparks</b> add ho gaye hain!",
                         parse_mode="HTML",
                     )
                 except Exception as notify_err:
@@ -267,7 +270,7 @@ async def cb_beat_3(query: CallbackQuery, state: FSMContext) -> None:
     await query.message.edit_text(
         f"🎉 <b>Welcome to InstaVault, {first_name}!</b>\n"
         "Tera account ban gaya hai. 🏦\n\n"
-        f"⚡ <b>Opening Balance:</b> {config.WELCOME_BONUS} Sparks\n"
+        f"⚡ <b>Opening Balance:</b> {rewards.WELCOME_BONUS} Sparks\n"
         "📊 <b>Member Rank:</b> Rookie Vaulter\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━━\n"
         "⚡ <b>DAILY MISSION aaj available hai:</b>\n"
@@ -344,8 +347,8 @@ async def cb_nav_refer(query: CallbackQuery) -> None:
         "👥 <b>REFER &amp; EARN (VIRAL GROWTH)</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Apne dosto ko InstaVault pe bulao aur dono Sparks kamao!\n\n"
-        f"🎁 <b>Tujhe milega:</b> {config.REFERRAL_JOIN_BONUS} Sparks <i>(Per successful signup)</i>\n"
-        f"🎁 <b>Dost ko milega:</b> {config.WELCOME_BONUS} Sparks <i>(Welcome Bonus)</i>\n\n"
+        f"🎁 <b>Tujhe milega:</b> {rewards.REFERRAL_JOIN_BONUS} Sparks <i>(Per successful signup)</i>\n"
+        f"🎁 <b>Dost ko milega:</b> {rewards.WELCOME_BONUS} Sparks <i>(Welcome Bonus)</i>\n\n"
         "🔗 <b>Tera Unique Referral Link:</b>\n"
         f"<code>{deep_link}</code>\n"
         "<i>(Is link ko copy kar aur dosto ke saath share kar!)</i>\n\n"

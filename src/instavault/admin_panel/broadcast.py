@@ -33,7 +33,7 @@ from aiogram.types import (
     Message,
 )
 
-from instavault import config
+from instavault.core import config
 from instavault.database.db_manager import (
     get_all_user_ids,
     get_total_users_count,

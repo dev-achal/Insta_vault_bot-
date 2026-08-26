@@ -25,8 +25,8 @@ import logging
 import random
 import re
 from typing import Any
-from instavault import config
-from instavault.config import PACKAGES
+from instavault.core import config
+from instavault.constants.rewards import PACKAGES
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext

@@ -12,8 +12,8 @@ P3 Cleanup: Removed unused `from config import PACKAGES` import.
             Single consolidated order flow using order_keyboard_full/empty.
 """
 
-from instavault import config
-from instavault.config import PACKAGES
+from instavault.core import config
+from instavault.constants.rewards import PACKAGES
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 

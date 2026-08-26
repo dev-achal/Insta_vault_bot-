@@ -21,7 +21,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
-from instavault.config import PACKAGES
+from instavault.constants.rewards import PACKAGES
 from instavault.database.db_manager import (
     get_user,
     place_order_transactional,

@@ -14,7 +14,7 @@ import logging
 
 import aiohttp
 
-from instavault import config
+from instavault.core import config
 
 logger = logging.getLogger(__name__)
 

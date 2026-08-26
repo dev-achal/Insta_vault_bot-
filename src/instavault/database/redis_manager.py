@@ -13,7 +13,7 @@ from typing import Optional, Any
 
 from redis.asyncio import Redis
 
-from instavault.config import REDIS_URL
+from instavault.core.config import REDIS_URL
 
 logger = logging.getLogger(__name__)
 

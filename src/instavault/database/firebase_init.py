@@ -22,23 +22,16 @@ def init_firebase() -> AsyncClient:
     if _db is not None:
         return _db
 
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    default_path = os.path.join(project_root, "firebase_credentials.json")
-    creds_path = os.getenv("FIREBASE_CREDENTIALS_PATH", default_path)
+    from instavault.core.config import FIREBASE_CREDENTIALS_PATH
 
-    if os.path.isabs(creds_path):
-        abs_path = os.path.abspath(creds_path)
-    else:
-        abs_path = os.path.abspath(os.path.join(project_root, creds_path))
-
-    if not os.path.exists(abs_path):
+    if not os.path.exists(FIREBASE_CREDENTIALS_PATH):
         raise FileNotFoundError(
-            f"Firebase credentials file not found at: {abs_path}\n"
+            f"Firebase credentials file not found at: {FIREBASE_CREDENTIALS_PATH}\n"
             "Set FIREBASE_CREDENTIALS_PATH in your .env to point to the JSON file."
         )
 
     if not firebase_admin._apps:
-        cred = credentials.Certificate(abs_path)
+        cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
         firebase_admin.initialize_app(cred)
         logger.info("Firebase Admin SDK initialised. Project: %s", cred.project_id)
     else:

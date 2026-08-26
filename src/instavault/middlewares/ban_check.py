@@ -12,7 +12,7 @@ from typing import Any, Awaitable, Callable, Dict, Set
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message, TelegramObject
 
-from instavault import config
+from instavault.core import config
 from instavault.database.db_manager import get_banned_user_ids
 
 logger = logging.getLogger(__name__)

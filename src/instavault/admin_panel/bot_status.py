@@ -23,7 +23,7 @@ from typing import Dict, Any
 from aiogram import F, Router
 from aiogram.types import CallbackQuery
 
-from instavault import config
+from instavault.core import config
 from instavault.database.firebase_init import get_db
 from instavault.database.redis_manager import get_redis
 from instavault.middlewares.ban_check import BANNED_USER_CACHE

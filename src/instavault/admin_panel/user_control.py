@@ -54,7 +54,7 @@ from aiogram.types import (
     Message,
 )
 
-from instavault import config
+from instavault.core import config
 from instavault.database.db_manager import (
     ban_user,
     deduct_spark_balance,

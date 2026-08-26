@@ -27,7 +27,7 @@ from aiogram.types import (
     Message,
 )
 
-from instavault import config
+from instavault.core import config
 from instavault.database.db_manager import complete_shortener_task, get_user
 from instavault.keyboards.inline import back_to_dashboard_keyboard
 from instavault.services.mission_token import (
@@ -37,6 +37,7 @@ from instavault.services.mission_token import (
 )
 from instavault.services.shortener_api import ShortenerApiError, create_short_link
 from instavault.utils.helpers import get_ist_now
+from instavault.constants import rewards
 
 logger = logging.getLogger(__name__)
 router = Router(name="tasks_shortener")
@@ -142,7 +143,7 @@ async def cb_shortener_task(query: CallbackQuery) -> None:
 
 async def _show_mission_screen(query: CallbackQuery, short_url: str) -> None:
     """Render the mission instruction screen with the GPLinks button."""
-    reward = config.SHORTENER_TASK_REWARD
+    reward = rewards.SHORTENER_TASK_REWARD
     await query.message.edit_text(
         "━━━━━━━━━━━━━━━━━━━━━━━\n"
         "🔗 <b>SHORTLINK TASK</b>\n"
@@ -197,7 +198,7 @@ async def handle_shortener_deeplink(message: Message, user_id: int, token: str) 
         return
 
     # Credit reward atomically
-    reward = config.SHORTENER_TASK_REWARD
+    reward = rewards.SHORTENER_TASK_REWARD
     try:
         await complete_shortener_task(user_id, reward)
     except Exception as e:

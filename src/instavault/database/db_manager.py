@@ -31,7 +31,7 @@ from google.cloud.firestore_v1 import AsyncDocumentReference
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 import json
-from instavault import config
+from instavault.core import config
 from instavault.database.firebase_init import get_db
 from instavault.database.redis_manager import (
     get_redis,
@@ -39,6 +39,7 @@ from instavault.database.redis_manager import (
     get_cached_user_data,
     invalidate_user_cache,
 )
+from instavault.constants import rewards
 from instavault.utils.helpers import (
     generate_referral_code,
     generate_vault_id,
@@ -254,9 +255,9 @@ async def _create_user_tx(
         return None
 
     # Calculate initial balance (welcome bonus + referee bonus if applicable)
-    initial_sparks = config.WELCOME_BONUS
+    initial_sparks = rewards.WELCOME_BONUS
     if referrer_uid:
-        initial_sparks += config.REFEREE_BONUS
+        initial_sparks += rewards.REFEREE_BONUS
 
     # Build and write user document
     user_data = _build_default_user_data(
@@ -292,8 +293,8 @@ async def _create_user_tx(
         tx.update(
             referrer_ref,
             {
-                "spark_balance": Increment(config.REFERRAL_JOIN_BONUS),
-                "lifetime_sparks": Increment(config.REFERRAL_JOIN_BONUS),
+                "spark_balance": Increment(rewards.REFERRAL_JOIN_BONUS),
+                "lifetime_sparks": Increment(rewards.REFERRAL_JOIN_BONUS),
                 "referral_count": Increment(1),
             },
         )
@@ -304,7 +305,7 @@ async def _create_user_tx(
             {
                 "user_id": str(referrer_uid),
                 "type": "referral",
-                "amount": config.REFERRAL_JOIN_BONUS,
+                "amount": rewards.REFERRAL_JOIN_BONUS,
                 "source": f"referral_bonus_{user_id}",
                 "created_at": now,
             },
@@ -401,8 +402,8 @@ async def reward_referrer(referrer_id: int | str) -> None:
     db = get_db()
     await db.collection(USERS_COL).document(str(referrer_id)).update(
         {
-            "spark_balance": Increment(config.REFERRAL_JOIN_BONUS),
-            "lifetime_sparks": Increment(config.REFERRAL_JOIN_BONUS),
+            "spark_balance": Increment(rewards.REFERRAL_JOIN_BONUS),
+            "lifetime_sparks": Increment(rewards.REFERRAL_JOIN_BONUS),
             "referral_count": Increment(1),
         }
     )
@@ -410,7 +411,7 @@ async def reward_referrer(referrer_id: int | str) -> None:
     logger.info(
         "Referrer %s rewarded: +%s Sparks, referral_count +1",
         referrer_id,
-        config.REFERRAL_JOIN_BONUS,
+        rewards.REFERRAL_JOIN_BONUS,
     )
 
 

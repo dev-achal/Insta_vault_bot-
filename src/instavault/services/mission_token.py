@@ -18,7 +18,8 @@ import logging
 import secrets
 
 from instavault.database.redis_manager import get_redis
-from instavault import config
+from instavault.core import config
+from instavault.constants import rewards
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ async def create_token(user_id: int) -> str:
     """
     token = f"sl_{secrets.token_hex(12)}"
     redis = get_redis()
-    ttl = config.SHORTENER_TOKEN_TTL
+    ttl = rewards.SHORTENER_TOKEN_TTL
 
     # Store the token → user_id mapping
     await redis.setex(f"{TOKEN_PREFIX}{token}", ttl, str(user_id))

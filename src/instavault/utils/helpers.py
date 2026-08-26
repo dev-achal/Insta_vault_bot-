@@ -12,7 +12,7 @@ Responsibilities:
 from datetime import datetime
 
 import pytz
-from instavault.config import TIMEZONE
+from instavault.constants.rewards import TIMEZONE
 
 # ---------------------------------------------------------------------------
 # Timezone helpers

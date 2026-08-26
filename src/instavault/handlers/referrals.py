@@ -7,12 +7,12 @@ Passive earning and multi-tier logic will be implemented in Phase 2.
 
 import logging
 
-from instavault import config
+from instavault.core import config
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
-from instavault.config import REFERRAL_JOIN_BONUS, REFEREE_BONUS
+from instavault.constants.rewards import REFERRAL_JOIN_BONUS, REFEREE_BONUS
 from instavault.database.db_manager import get_user
 from instavault.keyboards.inline import referral_keyboard
 

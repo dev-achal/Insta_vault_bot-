@@ -17,7 +17,7 @@ from aiogram.types import (
     Message,
 )
 
-from instavault import config
+from instavault.core import config
 from instavault.database.db_manager import ban_user, get_user, unban_user
 from instavault.middlewares.ban_check import (
     add_to_ban_cache,

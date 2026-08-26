@@ -8,7 +8,7 @@ install:
 run:
 	@echo "🚀 Starting InstaVault Bot..."
 	@fuser -k 8099/tcp 2>/dev/null || true
-	PYTHONPATH=. python src/instavault/main.py
+	PYTHONPATH=src python -m instavault
 
 # Run tests
 test:
