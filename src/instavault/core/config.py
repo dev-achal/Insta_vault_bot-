@@ -65,6 +65,6 @@ WEBAPP_PORT = settings.PORT if settings.PORT is not None else settings.BOT_PORT
 FIREBASE_CREDENTIALS_PATH = settings.FIREBASE_CREDENTIALS_PATH
 if FIREBASE_CREDENTIALS_PATH == "firebase_credentials.json":
     FIREBASE_CREDENTIALS_PATH = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
         "firebase_credentials.json",
     )
