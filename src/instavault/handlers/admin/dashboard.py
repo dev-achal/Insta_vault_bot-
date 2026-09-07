@@ -43,7 +43,7 @@ async def cmd_admin_panel(message: Message) -> None:
         await message.answer("⛔ <b>Access Denied.</b> You are not an Admin.")
         return
 
-    from .keyboards import admin_dashboard_keyboard
+    from instavault.keyboards.admin import admin_dashboard_keyboard
 
     text = (
         "👑 <b>Advanced Admin Dashboard</b>\n\n"
@@ -69,7 +69,7 @@ async def cb_open_admin_dashboard(query: CallbackQuery) -> None:
 
     await query.answer()
 
-    from .keyboards import admin_dashboard_keyboard
+    from instavault.keyboards.admin import admin_dashboard_keyboard
 
     text = (
         "👑 <b>Advanced Admin Dashboard</b>\n\n"
@@ -104,7 +104,7 @@ async def cb_admin_users_count(query: CallbackQuery) -> None:
     await query.answer()
 
     from instavault.database.db_manager import get_total_users_count
-    from .keyboards import admin_back_keyboard
+    from instavault.keyboards.admin import admin_back_keyboard
 
     try:
         # Fetch aggregation count asynchronously from DB
@@ -148,7 +148,7 @@ async def cb_admin_new_accounts_today(query: CallbackQuery) -> None:
     await query.answer()
 
     from instavault.database.db_manager import get_today_new_accounts_count
-    from .keyboards import admin_back_keyboard
+    from instavault.keyboards.admin import admin_back_keyboard
 
     try:
         count = await get_today_new_accounts_count()
@@ -192,7 +192,7 @@ async def cb_admin_dau_today(query: CallbackQuery) -> None:
     await query.answer()
 
     from instavault.database.redis_manager import get_today_active_users_count
-    from .keyboards import admin_back_keyboard
+    from instavault.keyboards.admin import admin_back_keyboard
 
     try:
         count = await get_today_active_users_count()
@@ -233,7 +233,7 @@ async def cb_admin_shortener_stats(query: CallbackQuery) -> None:
     await query.answer()
 
     from instavault.database.redis_manager import get_shortener_stats
-    from .keyboards import admin_back_keyboard
+    from instavault.keyboards.admin import admin_back_keyboard
 
     try:
         stats = await get_shortener_stats()
@@ -281,7 +281,7 @@ async def cb_admin_upload_apk(query: CallbackQuery, state: FSMContext) -> None:
 
     await query.answer()
 
-    from .keyboards import apk_upload_cancel_keyboard
+    from instavault.keyboards.admin import apk_upload_cancel_keyboard
 
     # Show current APK status + ask for file
     current_id = config.APK_FILE_ID
@@ -330,7 +330,7 @@ async def on_apk_file_received(message: Message, state: FSMContext) -> None:
         pending_file_size_mb=file_size_mb,
     )
 
-    from .keyboards import apk_upload_confirm_keyboard
+    from instavault.keyboards.admin import apk_upload_confirm_keyboard
 
     await message.answer(
         "📦 <b>APK File Received!</b>\n"
@@ -396,7 +396,7 @@ async def cb_apk_confirm(query: CallbackQuery, state: FSMContext) -> None:
 
     await state.clear()
 
-    from .keyboards import admin_back_keyboard
+    from instavault.keyboards.admin import admin_back_keyboard
 
     await query.message.edit_text(
         "✅ <b>APK Updated Successfully!</b>\n"
@@ -431,7 +431,7 @@ async def cb_apk_cancel(query: CallbackQuery, state: FSMContext) -> None:
     await query.answer("Upload cancelled.")
     await state.clear()
 
-    from .keyboards import admin_dashboard_keyboard
+    from instavault.keyboards.admin import admin_dashboard_keyboard
 
     await query.message.edit_text(
         "👑 <b>Advanced Admin Dashboard</b>\n\n"

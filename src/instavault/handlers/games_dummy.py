@@ -1,13 +1,11 @@
 """
 games_dummy.py
 ~~~~~~~~~~~~~~
-Dummy file for testing FREE-TO-PLAY (F2P) Games.
-Includes: Daily Tickets, Daily Spin, Idle Tycoon, and Leaderboard Quiz.
+Dummy file for testing Telegram Native Animated Emojis (Excluding Dice/Slots).
+Shows 5 different game logic variations using Dart, Basketball, Football, and Bowling.
 """
 
 import asyncio
-import random
-import time
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import (
@@ -19,341 +17,367 @@ from aiogram.types import (
 
 router = Router(name="games_dummy")
 
-# Dummy Database for F2P testing
-F2P_DB = {}
-
-
-def get_user_data(user_id: int):
-    if user_id not in F2P_DB:
-        F2P_DB[user_id] = {
-            "tickets": 3,
-            "sparks": 0,
-            "last_spin": 0.0,
-            "quiz_score": 0,
-            "tycoon_lvl": 1,
-            "tycoon_last_collect": time.time(),
-        }
-    return F2P_DB[user_id]
+# Temporary memory for streak games
+STREAK_SESSIONS = {}
+PENALTY_SESSIONS = {}
 
 
 # ==========================================
-# 🎮 MAIN F2P MENU
+# 🏆 SPORTS ARCADE MENU
 # ==========================================
-@router.message(Command("games"))
-async def cmd_games_menu(message: Message):
-    await show_main_menu(message, message.from_user.id)
-
-
-async def show_main_menu(message: Message, user_id: int, is_edit: bool = False):
-    data = get_user_data(user_id)
-
-    text = (
-        "🎮 <b>FREE-TO-PLAY ARCADE (DUMMY)</b>\n\n"
-        f"🎒 <b>Your Inventory:</b>\n"
-        f"🪙 Sparks: <b>{data['sparks']}</b>\n"
-        f"🎟️ Free Tickets: <b>{data['tickets']}</b>\n"
-        f"🏆 Quiz Score: <b>{data['quiz_score']}</b>\n\n"
-        "<i>Yahan aapka koi paisa/Sparks nahi katega. Sab free hai!</i>"
-    )
-
+@router.message(Command("sports"))
+async def cmd_sports_menu(message: Message):
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="🎟️ Ticket Arcade (Slots)", callback_data="dummy_f2p_slots"
+                    text="🎯 Bullseye Challenge (High Risk)",
+                    callback_data="anim_dart_bullseye",
                 )
             ],
             [
                 InlineKeyboardButton(
-                    text="🎡 Daily Free Spin", callback_data="dummy_f2p_spin"
+                    text="🎯 Dart Duel (Vs Bot)", callback_data="anim_dart_duel"
                 )
             ],
             [
                 InlineKeyboardButton(
-                    text="🌾 Free Idle Tycoon", callback_data="dummy_f2p_tycoon"
+                    text="🏀 Hoop Streak (Multiplier)", callback_data="anim_hoop_start"
                 )
             ],
             [
                 InlineKeyboardButton(
-                    text="🧠 Leaderboard Trivia", callback_data="dummy_f2p_quiz"
+                    text="⚽ Penalty Shootout (Best of 3)",
+                    callback_data="anim_penalty_start",
                 )
             ],
             [
                 InlineKeyboardButton(
-                    text="🔄 Get +3 Free Tickets (Test)",
-                    callback_data="dummy_add_tickets",
+                    text="🎳 Bowling Multiplier", callback_data="anim_bowling"
                 )
             ],
         ]
     )
-
-    if is_edit:
-        await message.edit_text(text, parse_mode="HTML", reply_markup=keyboard)
-    else:
-        await message.answer(text, parse_mode="HTML", reply_markup=keyboard)
-
-
-@router.callback_query(F.data == "dummy_f2p_menu")
-async def cb_back_menu(query: CallbackQuery):
-    await show_main_menu(query.message, query.from_user.id, is_edit=True)
-    await query.answer()
-
-
-@router.callback_query(F.data == "dummy_add_tickets")
-async def cb_add_tickets(query: CallbackQuery):
-    data = get_user_data(query.from_user.id)
-    data["tickets"] += 3
-    await query.answer("Added +3 Tickets for testing!", show_alert=True)
-    await show_main_menu(query.message, query.from_user.id, is_edit=True)
-
-
-# ==========================================
-# 1. 🎟️ TICKET ARCADE (SLOTS)
-# ==========================================
-@router.callback_query(F.data == "dummy_f2p_slots")
-async def cb_f2p_slots(query: CallbackQuery):
-    data = get_user_data(query.from_user.id)
-
-    if data["tickets"] < 1:
-        return await query.answer(
-            "❌ You don't have any Free Tickets!", show_alert=True
-        )
-
-    data["tickets"] -= 1  # Deduct ONLY ticket, not sparks!
-
-    msg = await query.message.edit_text(
-        "🎰 <b>Ticket Slots...</b>\n\n[ 🔄 | 🔄 | 🔄 ]", parse_mode="HTML"
-    )
-    symbols = ["🍒", "💎", "🔔", "🍉"]
-
-    for _ in range(2):
-        await asyncio.sleep(0.4)
-        s1, s2, s3 = (
-            random.choice(symbols),
-            random.choice(symbols),
-            random.choice(symbols),
-        )
-        await msg.edit_text(
-            f"🎰 <b>Ticket Slots...</b>\n\n[ {s1} | {s2} | {s3} ]", parse_mode="HTML"
-        )
-
-    await asyncio.sleep(0.4)
-
-    # 30% chance to win for dummy testing
-    if random.random() < 0.30:
-        s1 = s2 = s3 = "💎"
-        data["sparks"] += 100
-        text = f"🎰 <b>RESULT</b>\n\n[ {s1} | {s2} | {s3} ]\n\n🎉 <b>YOU WON!</b> +100 Sparks!"
-    else:
-        s1, s2, s3 = (
-            random.choice(symbols),
-            random.choice(symbols),
-            random.choice(symbols),
-        )
-        while s1 == s2 == s3:
-            s3 = random.choice(symbols)
-        text = f"🎰 <b>RESULT</b>\n\n[ {s1} | {s2} | {s3} ]\n\n😢 Ahh, better luck next time. (No Sparks lost!)"
-
-    await msg.edit_text(
-        text,
-        parse_mode="HTML",
-        reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="🔄 Use Another Ticket", callback_data="dummy_f2p_slots"
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        text="🔙 Back to Menu", callback_data="dummy_f2p_menu"
-                    )
-                ],
-            ]
-        ),
-    )
-    await query.answer()
-
-
-# ==========================================
-# 2. 🎡 DAILY FREE SPIN
-# ==========================================
-@router.callback_query(F.data == "dummy_f2p_spin")
-async def cb_f2p_spin(query: CallbackQuery):
-    data = get_user_data(query.from_user.id)
-
-    # Normally 24 hours (86400 secs), using 10 seconds for testing
-    if time.time() - data["last_spin"] < 10:
-        remaining = 10 - int(time.time() - data["last_spin"])
-        return await query.answer(
-            f"⏳ Please wait {remaining} seconds for your next Daily Spin! (Normally 24 hours)",
-            show_alert=True,
-        )
-
-    data["last_spin"] = time.time()
-
-    msg = await query.message.edit_text(
-        "🎡 <b>Spinning the Daily Wheel...</b> 🔄", parse_mode="HTML"
-    )
-    await asyncio.sleep(1.5)
-
-    rewards = [
-        ("10 Sparks", 10),
-        ("50 Sparks", 50),
-        ("100 Sparks", 100),
-        ("Better Luck Tomorrow!", 0),
-    ]
-    prize_name, prize_val = random.choice(rewards)
-    data["sparks"] += prize_val
-
-    text = f"🎡 <b>DAILY SPIN RESULT</b>\n\n🎁 You got: <b>{prize_name}</b>"
-
-    await msg.edit_text(
-        text,
-        parse_mode="HTML",
-        reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="🔙 Back to Menu", callback_data="dummy_f2p_menu"
-                    )
-                ]
-            ]
-        ),
-    )
-    await query.answer()
-
-
-# ==========================================
-# 3. 🌾 IDLE TYCOON (PASSIVE)
-# ==========================================
-@router.callback_query(F.data == "dummy_f2p_tycoon")
-async def cb_f2p_tycoon(query: CallbackQuery):
-    data = get_user_data(query.from_user.id)
-
-    minutes_passed = (time.time() - data["tycoon_last_collect"]) / 60
-    uncollected = int(minutes_passed * (data["tycoon_lvl"] * 5))
-
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text=f"📥 Collect {uncollected} Free Sparks",
-                    callback_data="dummy_f2p_tycoon_col",
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🔙 Back to Menu", callback_data="dummy_f2p_menu"
-                )
-            ],
-        ]
-    )
-
-    await query.message.edit_text(
-        f"🌾 <b>FREE IDLE FARM</b>\n\n"
-        f"Ye farm har minute free Sparks banata hai.\n"
-        f"Earning Rate: {data['tycoon_lvl'] * 5} Sparks/min\n\n"
-        f"💰 Uncollected: <b>{uncollected} Sparks</b>",
+    await message.answer(
+        "🏆 <b>ANIMATED SPORTS ARCADE</b>\n\n"
+        "Yahan Dice(🎲) aur Slots(🎰) ko chhod kar baaki 4 emojis ka use karke "
+        "alag-alag 5 types ke games banaye gaye hain:\n\n"
+        "Khel kar dekhiye:",
         parse_mode="HTML",
         reply_markup=keyboard,
     )
+
+
+@router.callback_query(F.data == "anim_back_menu")
+async def cb_back_menu(query: CallbackQuery):
+    await query.message.delete()
+    await cmd_sports_menu(query.message)
     await query.answer()
 
 
-@router.callback_query(F.data == "dummy_f2p_tycoon_col")
-async def cb_f2p_tycoon_col(query: CallbackQuery):
-    data = get_user_data(query.from_user.id)
-    minutes_passed = (time.time() - data["tycoon_last_collect"]) / 60
-    uncollected = int(minutes_passed * (data["tycoon_lvl"] * 5))
-
-    if uncollected < 1:
-        return await query.answer("Too soon! Wait a bit.", show_alert=True)
-
-    data["sparks"] += uncollected
-    data["tycoon_last_collect"] = time.time()
-    await query.answer(f"✅ Collected {uncollected} Sparks!", show_alert=True)
-    await cb_f2p_tycoon(query)
-
-
 # ==========================================
-# 4. 🧠 LEADERBOARD TRIVIA
+# 1. 🎯 BULLSEYE CHALLENGE (All or Nothing)
 # ==========================================
-TRIVIA_QUESTIONS = [
-    {
-        "q": "What is the capital of India?",
-        "options": ["Mumbai", "New Delhi", "Kolkata"],
-        "ans": 1,
-    },
-    {
-        "q": "Which planet is known as the Red Planet?",
-        "options": ["Venus", "Mars", "Jupiter"],
-        "ans": 1,
-    },
-    {
-        "q": "How many seconds are in one hour?",
-        "options": ["3600", "60", "2400"],
-        "ans": 0,
-    },
-]
-
-
-@router.callback_query(F.data == "dummy_f2p_quiz")
-async def cb_f2p_quiz(query: CallbackQuery):
-    q_data = random.choice(TRIVIA_QUESTIONS)
-
-    # Store the correct answer index in the callback data for dummy testing
-    buttons = []
-    for idx, opt in enumerate(q_data["options"]):
-        is_correct = "1" if idx == q_data["ans"] else "0"
-        buttons.append(
-            [
-                InlineKeyboardButton(
-                    text=opt, callback_data=f"dummy_quizans_{is_correct}"
-                )
-            ]
-        )
-
-    buttons.append(
-        [InlineKeyboardButton(text="🔙 Back", callback_data="dummy_f2p_menu")]
-    )
-
+@router.callback_query(F.data == "anim_dart_bullseye")
+async def cb_dart_bullseye(query: CallbackQuery):
     await query.message.edit_text(
-        f"🧠 <b>TRIVIA CHALLENGE</b>\n\n"
-        f"<i>Question:</i> <b>{q_data['q']}</b>\n\n"
-        f"Sahi jawab dekar apna Leaderboard Score badhayein! Har week top players ko prize milega.",
-        parse_mode="HTML",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons),
+        "🎯 Throwing dart... If it hits the exact center, you win 10x!"
     )
-    await query.answer()
 
+    # Send native dart emoji
+    msg = await query.message.answer_dice(emoji="🎯")
+    await asyncio.sleep(2.5)  # Wait for animation
 
-@router.callback_query(F.data.startswith("dummy_quizans_"))
-async def cb_quiz_ans(query: CallbackQuery):
-    data = get_user_data(query.from_user.id)
-    is_correct = query.data.split("_")[-1] == "1"
-
-    if is_correct:
-        data["quiz_score"] += 10
-        text = f"✅ <b>CORRECT!</b>\n\nYou got +10 Score. Your total score is now <b>{data['quiz_score']}</b>!"
+    val = msg.dice.value
+    if val == 6:
+        text = f"🎯 <b>BULLSEYE! (Value: {val})</b>\n\n🎉 BOOM! You hit the exact center! You win 10x multiplier!"
     else:
-        text = f"❌ <b>WRONG!</b>\n\nYour score is still <b>{data['quiz_score']}</b>."
+        text = f"🎯 <b>Missed Center (Value: {val})</b>\n\n😢 You missed the bullseye. You win nothing."
 
-    await query.message.edit_text(
+    await query.message.answer(
         text,
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text="🧠 Next Question", callback_data="dummy_f2p_quiz"
+                        text="🔄 Try Again", callback_data="anim_dart_bullseye"
                     )
                 ],
+                [InlineKeyboardButton(text="🔙 Menu", callback_data="anim_back_menu")],
+            ]
+        ),
+    )
+    await query.answer()
+
+
+# ==========================================
+# 2. 🎯 DART DUEL (PvE)
+# ==========================================
+@router.callback_query(F.data == "anim_dart_duel")
+async def cb_dart_duel(query: CallbackQuery):
+    await query.message.edit_text(
+        "🎯 <b>DART DUEL!</b>\n\nYour turn first...", parse_mode="HTML"
+    )
+
+    # User's throw
+    user_msg = await query.message.answer_dice(emoji="🎯")
+    await asyncio.sleep(2.5)
+    user_val = user_msg.dice.value
+
+    await query.message.answer(
+        f"👤 Your Score: <b>{user_val}</b>\n\nNow it's my (Bot's) turn...",
+        parse_mode="HTML",
+    )
+    await asyncio.sleep(1.0)
+
+    # Bot's throw
+    bot_msg = await query.message.answer_dice(emoji="🎯")
+    await asyncio.sleep(2.5)
+    bot_val = bot_msg.dice.value
+
+    if user_val > bot_val:
+        result = "🎉 <b>YOU WIN!</b>"
+    elif user_val < bot_val:
+        result = "🤖 <b>BOT WINS!</b> You lose."
+    else:
+        result = "🤝 <b>IT'S A TIE!</b>"
+
+    text = f"👤 You: {user_val} | 🤖 Bot: {bot_val}\n\n{result}"
+    await query.message.answer(
+        text,
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text="🔙 Back to Menu", callback_data="dummy_f2p_menu"
+                        text="🔄 Rematch", callback_data="anim_dart_duel"
                     )
                 ],
+                [InlineKeyboardButton(text="🔙 Menu", callback_data="anim_back_menu")],
+            ]
+        ),
+    )
+    await query.answer()
+
+
+# ==========================================
+# 3. 🏀 HOOP STREAK (Crash Style Multiplier)
+# ==========================================
+@router.callback_query(F.data == "anim_hoop_start")
+async def cb_hoop_start(query: CallbackQuery):
+    STREAK_SESSIONS[query.from_user.id] = {"streak": 0, "multiplier": 1.0}
+    await _render_hoop_menu(query)
+    await query.answer()
+
+
+async def _render_hoop_menu(query: CallbackQuery):
+    session = STREAK_SESSIONS[query.from_user.id]
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🏀 Shoot Hoop (Risk)", callback_data="anim_hoop_shoot"
+                )
+            ],
+            (
+                [
+                    InlineKeyboardButton(
+                        text=f"💰 Cashout ({session['multiplier']}x)",
+                        callback_data="anim_hoop_cashout",
+                    )
+                ]
+                if session["streak"] > 0
+                else []
+            ),
+            [InlineKeyboardButton(text="🔙 Menu", callback_data="anim_back_menu")],
+        ]
+    )
+    text = f"🏀 <b>HOOP STREAK</b>\n\nStreak: <b>{session['streak']} Goals</b>\nCurrent Multiplier: <b>{session['multiplier']}x</b>\n\nShoot the ball! If you miss, you lose everything."
+
+    if query.message.text and "HOOP STREAK" in query.message.text:
+        await query.message.edit_text(text, parse_mode="HTML", reply_markup=kb)
+    else:
+        await query.message.answer(text, parse_mode="HTML", reply_markup=kb)
+
+
+@router.callback_query(F.data == "anim_hoop_shoot")
+async def cb_hoop_shoot(query: CallbackQuery):
+    session = STREAK_SESSIONS.get(query.from_user.id)
+    if not session:
+        return await query.answer("Session expired")
+
+    await query.message.edit_text("🏀 <b>Shooting...</b>", parse_mode="HTML")
+    msg = await query.message.answer_dice(emoji="🏀")
+    await asyncio.sleep(2.5)  # Wait for basket animation
+
+    val = msg.dice.value
+    # Basketball values: 4 and 5 are GOALS. 1, 2, 3 are MISSES.
+    if val >= 4:
+        session["streak"] += 1
+        session["multiplier"] = round(session["multiplier"] * 1.5, 1)  # 1.5x each goal
+        await query.message.answer(
+            f"✅ <b>GOAL!</b> (Value: {val})\nYour streak continues!", parse_mode="HTML"
+        )
+        await asyncio.sleep(1)
+        await _render_hoop_menu(query)
+    else:
+        # Missed
+        STREAK_SESSIONS.pop(query.from_user.id, None)
+        await query.message.answer(
+            f"❌ <b>MISSED!</b> (Value: {val})\n\nOh no! The ball bounced out. You lost your multiplier.",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text="🔄 Try Again", callback_data="anim_hoop_start"
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text="🔙 Menu", callback_data="anim_back_menu"
+                        )
+                    ],
+                ]
+            ),
+        )
+    await query.answer()
+
+
+@router.callback_query(F.data == "anim_hoop_cashout")
+async def cb_hoop_cashout(query: CallbackQuery):
+    session = STREAK_SESSIONS.pop(query.from_user.id, None)
+    if not session:
+        return await query.answer()
+
+    await query.message.edit_text(
+        f"💰 <b>CASHED OUT!</b>\n\nYou secured your <b>{session['multiplier']}x</b> multiplier safely!",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="🔄 Play Again", callback_data="anim_hoop_start"
+                    )
+                ],
+                [InlineKeyboardButton(text="🔙 Menu", callback_data="anim_back_menu")],
+            ]
+        ),
+    )
+    await query.answer()
+
+
+# ==========================================
+# 4. ⚽ PENALTY SHOOTOUT (Best of 3)
+# ==========================================
+@router.callback_query(F.data == "anim_penalty_start")
+async def cb_penalty_start(query: CallbackQuery):
+    PENALTY_SESSIONS[query.from_user.id] = {"round": 1, "user_goals": 0, "bot_goals": 0}
+    await _play_penalty_round(query, query.from_user.id)
+    await query.answer()
+
+
+async def _play_penalty_round(query: CallbackQuery, user_id: int):
+    session = PENALTY_SESSIONS[user_id]
+    if session["round"] > 3:
+        # END GAME
+        ug, bg = session["user_goals"], session["bot_goals"]
+        if ug > bg:
+            res = "🎉 <b>YOU WON THE MATCH!</b>"
+        elif ug < bg:
+            res = "🤖 <b>BOT WINS!</b>"
+        else:
+            res = "🤝 <b>DRAW!</b>"
+
+        await query.message.answer(
+            f"🏁 <b>FINAL SCORE</b>\nYou: {ug} | Bot: {bg}\n\n{res}",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text="🔄 Play Again", callback_data="anim_penalty_start"
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text="🔙 Menu", callback_data="anim_back_menu"
+                        )
+                    ],
+                ]
+            ),
+        )
+        return
+
+    await query.message.answer(
+        f"⚽ <b>ROUND {session['round']} / 3</b>\n\n👤 <b>Your Kick:</b>",
+        parse_mode="HTML",
+    )
+    u_msg = await query.message.answer_dice(emoji="⚽")
+    await asyncio.sleep(2.5)
+
+    if u_msg.dice.value >= 4:
+        session["user_goals"] += 1
+        await query.message.answer("✅ <b>GOAL for You!</b>", parse_mode="HTML")
+    else:
+        await query.message.answer("❌ <b>MISSED!</b>", parse_mode="HTML")
+
+    await asyncio.sleep(1)
+    await query.message.answer("🤖 <b>Bot's Kick:</b>", parse_mode="HTML")
+    b_msg = await query.message.answer_dice(emoji="⚽")
+    await asyncio.sleep(2.5)
+
+    if b_msg.dice.value >= 4:
+        session["bot_goals"] += 1
+        await query.message.answer("✅ <b>GOAL for Bot!</b>", parse_mode="HTML")
+    else:
+        await query.message.answer("❌ <b>Bot MISSED!</b>", parse_mode="HTML")
+
+    session["round"] += 1
+    await asyncio.sleep(1)
+
+    # Auto continue to next round
+    await _play_penalty_round(query, user_id)
+
+
+# ==========================================
+# 5. 🎳 BOWLING MULTIPLIER (Dynamic Payout)
+# ==========================================
+@router.callback_query(F.data == "anim_bowling")
+async def cb_bowling(query: CallbackQuery):
+    await query.message.edit_text(
+        "🎳 <b>Rolling the ball...</b>\n\nPayout is based on how many pins you knock down. Strike (6) pays massive!",
+        parse_mode="HTML",
+    )
+
+    msg = await query.message.answer_dice(emoji="🎳")
+    await asyncio.sleep(3.0)  # Bowling takes a bit longer
+
+    val = msg.dice.value
+    # Value 1 = gutter. Value 6 = Strike.
+    if val == 6:
+        text = f"🎳 <b>STRIKE! (Value: 6)</b>\n\n🎉 Incredible! You knocked them all down! Payout: <b>5.0x</b>"
+    elif val == 1:
+        text = (
+            f"🎳 <b>GUTTERBALL (Value: 1)</b>\n\n😢 Ouch. 0 pins. Payout: <b>0.0x</b>"
+        )
+    else:
+        # Values 2,3,4,5 give fractional payouts
+        multiplier = round((val - 1) * 0.4, 1)
+        text = f"🎳 <b>PINS DOWN (Value: {val})</b>\n\nNot bad! Payout: <b>{multiplier}x</b>"
+
+    await query.message.answer(
+        text,
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="🔄 Roll Again", callback_data="anim_bowling"
+                    )
+                ],
+                [InlineKeyboardButton(text="🔙 Menu", callback_data="anim_back_menu")],
             ]
         ),
     )

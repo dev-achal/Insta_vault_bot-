@@ -36,15 +36,12 @@ from instavault.core.config import (
 )
 from instavault.database.firebase_init import init_firebase
 from instavault.database.redis_manager import close_redis, init_redis
-from instavault.handlers import admin, errors, main_menu, orders, referrals, start
-import instavault.admin_panel.dashboard
-import instavault.admin_panel.broadcast
-import instavault.admin_panel.manage_user
-import instavault.admin_panel.user_control
-import instavault.admin_panel.bot_status
+from instavault.handlers.admin import admin_router
+from instavault.handlers import errors, main_menu, orders, referrals, start
 from instavault.middlewares.throttling import ThrottlingMiddleware
 from instavault.middlewares.fsm_reset import FSMResetMiddleware
 from instavault.middlewares.ban_check import BanCheckMiddleware, init_ban_cache
+from instavault.middlewares.clean_chat import CleanChatMiddleware
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -125,21 +122,17 @@ def _build_bot_and_dispatcher():
     # Register routers (most-specific first)
     dp.include_router(errors.router)
     dp.include_router(start.router)
-    dp.include_router(admin.router)
+    dp.include_router(admin_router)
     dp.include_router(main_menu.router)
     dp.include_router(orders.router)
     dp.include_router(referrals.router)
-    from instavault.handlers import games_dummy
+    from instavault.handlers import games_dummy, games_hub
 
     dp.include_router(games_dummy.router)
+    dp.include_router(games_hub.router)
     from instavault.handlers import tasks_shortener
 
     dp.include_router(tasks_shortener.router)
-    dp.include_router(instavault.admin_panel.dashboard.router)
-    dp.include_router(instavault.admin_panel.broadcast.router)
-    dp.include_router(instavault.admin_panel.manage_user.router)
-    dp.include_router(instavault.admin_panel.user_control.router)
-    dp.include_router(instavault.admin_panel.bot_status.router)
 
     # Ban check middleware — Zero-cost in-memory ban enforcement
     ban_check = BanCheckMiddleware()
@@ -182,6 +175,10 @@ def _build_bot_and_dispatcher():
     # Register on specific event types so 'state' is available in data
     dp.message.outer_middleware(UpdateLoggerMiddleware())
     dp.callback_query.outer_middleware(UpdateLoggerMiddleware())
+
+    # Clean-chat middleware — silently auto-deletes user messages in private chats
+    clean_chat = CleanChatMiddleware()
+    dp.message.outer_middleware(clean_chat)
 
     return bot, dp
 

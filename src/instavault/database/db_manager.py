@@ -905,6 +905,58 @@ async def log_transaction(
     return ref.id
 
 
+async def get_user_transactions(
+    user_id: int | str,
+    limit: int = 10,
+    page: int = 0,
+) -> list[dict[str, Any]]:
+    """Return paginated transaction history for a user, newest first.
+
+    Each returned dict contains: ``tx_id``, ``type``, ``amount``,
+    ``source``, ``created_at``, ``user_id``.
+
+    Uses Firestore native ``order_by`` + ``offset`` for server-side
+    pagination — same pattern as :func:`get_user_orders`.
+
+    Note:
+        Requires a Composite Index on ``transactions``
+        (user_id ASC, created_at DESC).
+    """
+    db = get_db()
+    offset_val = page * limit
+
+    query = (
+        db.collection(TRANSACTIONS_COL)
+        .where(filter=FieldFilter("user_id", "==", str(user_id)))
+        .order_by("created_at", direction=Query.DESCENDING)
+        .offset(offset_val)
+        .limit(limit)
+    )
+
+    results: list[dict[str, Any]] = []
+    async for doc in query.stream():
+        data = doc.to_dict()
+        data["tx_id"] = doc.id
+        results.append(data)
+
+    return results
+
+
+async def count_user_transactions(user_id: int | str) -> int:
+    """Return the total number of transactions for a user.
+
+    Uses a lightweight Firestore aggregation query (``count()``)
+    instead of fetching all documents.
+    """
+    db = get_db()
+    query = db.collection(TRANSACTIONS_COL).where(
+        filter=FieldFilter("user_id", "==", str(user_id))
+    )
+    result = await query.count().get()
+    # result is a list of AggregationResult; first element has the count
+    return result[0][0].value if result and result[0] else 0
+
+
 # ===========================================================================
 # WAITLIST OPERATIONS
 # ===========================================================================
@@ -1122,6 +1174,41 @@ async def complete_shortener_task(user_id: int, reward: int) -> None:
 
     logger.info(
         "Shortener task completed for user %s: +%d Sparks, date=%s",
+        user_id,
+        reward,
+        today_str,
+    )
+
+
+async def complete_quiz_task(user_id: int, reward: int) -> None:
+    """Atomically credit quiz reward and stamp today's date.
+
+    Updates:
+      - spark_balance += reward   (via Increment sentinel)
+      - lifetime_sparks += reward (via Increment sentinel)
+      - last_quiz_date = today IST date string (e.g. "2026-09-07")
+
+    Also invalidates the Redis user cache so the dashboard
+    reflects the new balance immediately.
+    """
+    db = get_db()
+    today_str = get_ist_now().strftime("%Y-%m-%d")
+
+    await db.collection(USERS_COL).document(str(user_id)).update(
+        {
+            "spark_balance": Increment(reward),
+            "lifetime_sparks": Increment(reward),
+            "last_quiz_date": today_str,
+        }
+    )
+
+    await invalidate_user_cache(user_id)
+
+    # Log to immutable transaction ledger (audit trail)
+    await log_transaction(user_id, "earn", reward, "game_quiz")
+
+    logger.info(
+        "Quiz task completed for user %s: +%d Sparks, date=%s",
         user_id,
         reward,
         today_str,

@@ -141,6 +141,42 @@ def dashboard_keyboard() -> InlineKeyboardMarkup:
     )
 
 
+def games_hub_keyboard() -> InlineKeyboardMarkup:
+    """Keyboard for the Games & Earn Hub."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🎲 Coin Flip (Free Daily)",
+                    callback_data="game_coin_flip_menu",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🎰 Daily Spin",
+                    callback_data="game_daily_spin",
+                ),
+                InlineKeyboardButton(
+                    text="🧠 Quiz (250 Sparks)",
+                    callback_data="game_quiz",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🛡️ Verify You Are Human (+500 Sparks)",
+                    callback_data="task_shortener_start",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔙 Back to Mission Center",
+                    callback_data="nav_mission",
+                ),
+            ],
+        ]
+    )
+
+
 def mission_center_keyboard() -> InlineKeyboardMarkup:
     """Mission Center — multi-task hub with all available daily tasks."""
     return InlineKeyboardMarkup(
@@ -153,7 +189,13 @@ def mission_center_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(
-                    text="🔗 Shortlink Task (500 Sparks)",
+                    text="🎮 Games & Earn",
+                    callback_data="nav_games_hub",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🛡️ Verify You Are Human (+500 Sparks)",
                     callback_data="task_shortener_start",
                 ),
             ],
@@ -218,7 +260,7 @@ def rewards_keyboard() -> InlineKeyboardMarkup:
     buttons = [
         [
             InlineKeyboardButton(
-                text="🎁 Daily Reward Box",
+                text="🎰 Daily Slot Machine",
                 callback_data="action_mystery_box",
             )
         ]
@@ -252,13 +294,19 @@ def profile_keyboard(ig_linked: bool = False) -> InlineKeyboardMarkup:
                     callback_data="nav_order_history",
                 ),
                 InlineKeyboardButton(
+                    text="💰 Transactions",
+                    callback_data="nav_my_transactions",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
                     text="🤝 Invite Friends",
                     callback_data="nav_refer",
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    text="🎁 Daily Reward",
+                    text="🎰 Daily Slot Machine",
                     callback_data="action_mystery_box",
                 )
             ],
@@ -342,58 +390,6 @@ def confirm_order_keyboard(package_type: str, nonce: str) -> InlineKeyboardMarku
             ],
         ]
     )
-
-
-def admin_order_alert_keyboard(order_id: str, user_id: int) -> InlineKeyboardMarkup:
-    """Admin group inline keyboard for order approval/cancellation.
-
-    Three buttons:
-      ✅ Approve  — triggers admin_approve:{order_id}
-      ❌ Cancel   — triggers admin_cancel:{order_id}
-      💬 Message  — URL button opens DM with the user
-    """
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="✅ Approve",
-                    callback_data=f"admin_approve:{order_id}",
-                ),
-                InlineKeyboardButton(
-                    text="❌ Cancel",
-                    callback_data=f"admin_cancel:{order_id}",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="💬 Message User",
-                    url=f"tg://user?id={user_id}",
-                ),
-            ],
-        ]
-    )
-
-
-def admin_check_status_keyboard(order_id: str) -> InlineKeyboardMarkup:
-    """Post-approval keyboard with a Check Status button.
-
-    Replaces the Approve/Cancel buttons after an order is approved.
-    """
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="🔄 Check Status",
-                    callback_data=f"admin_check:{order_id}",
-                ),
-            ],
-        ]
-    )
-
-
-# ===========================================================================
-# Referral & Help keyboards
-# ===========================================================================
 
 
 def referral_keyboard(referral_code: str) -> InlineKeyboardMarkup:

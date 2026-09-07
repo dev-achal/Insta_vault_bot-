@@ -28,7 +28,7 @@ from instavault.database.firebase_init import get_db
 from instavault.database.redis_manager import get_redis
 from instavault.middlewares.ban_check import BANNED_USER_CACHE
 from instavault.utils.helpers import get_ist_now
-from .keyboards import admin_back_keyboard
+from instavault.keyboards.admin import admin_back_keyboard
 
 logger = logging.getLogger(__name__)
 router = Router(name="admin_bot_status")

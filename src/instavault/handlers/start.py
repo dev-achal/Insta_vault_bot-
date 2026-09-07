@@ -92,6 +92,22 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
                 await handle_shortener_deeplink(message, user_id, deep_arg)
                 return
 
+            if deep_arg.startswith("qz_"):
+                from instavault.handlers.games_hub import (
+                    handle_quiz_deeplink,
+                )
+
+                await handle_quiz_deeplink(message, user_id, deep_arg)
+                return
+
+            if deep_arg.startswith("vf_"):
+                from instavault.handlers.games_hub import (
+                    handle_verify_deeplink,
+                )
+
+                await handle_verify_deeplink(message, user_id, deep_arg)
+                return
+
         # Route returning users straight to the dashboard
         from instavault.handlers.main_menu import show_dashboard
 
@@ -314,7 +330,7 @@ async def cb_nav_mission(query: CallbackQuery) -> None:
         "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Apne manpasand task complete karke Sparks kamao!\n\n"
         "1️⃣ <b>InstaVault App Task</b> — 400 Sparks\n"
-        "2️⃣ <b>Shortlink Task</b> — 500 Sparks\n"
+        "2️⃣ <b>Verify You Are Human (Captcha)</b> — 500 Sparks\n"
         "━━━━━━━━━━━━━━━━━━━━━━━",
         reply_markup=mission_center_keyboard(),
     )

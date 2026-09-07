@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+docs/PROJECT_OVERVIEW.md
+src/insta_vault_bot.egg-info/PKG-INFO
+src/insta_vault_bot.egg-info/SOURCES.txt
+src/insta_vault_bot.egg-info/dependency_links.txt
+src/insta_vault_bot.egg-info/requires.txt
+src/insta_vault_bot.egg-info/top_level.txt
+src/instavault/__init__.py
+src/instavault/__main__.py

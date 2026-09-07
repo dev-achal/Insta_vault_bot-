@@ -10,7 +10,7 @@ Screens:
   3. 📦  Order        (nav_order — /order handled exclusively by orders.py)
   4. 🎁  Rewards      (nav_rewards / /rewards)
   5. 📊  Profile      (nav_profile / /profile)
-  6. 🎰  Mystery Box  (action_mystery_box)
+  6. 🎰  Daily Slot Machine  (action_mystery_box)
   7. 🏆  Leaderboard  (nav_leaderboard)
 
 Bug Fixes (P0/P1/P2):
@@ -192,7 +192,7 @@ async def cmd_mission(message: Message) -> None:
         "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Apne manpasand task complete karke Sparks kamao!\n\n"
         "1️⃣ <b>InstaVault App Task</b> — 400 Sparks\n"
-        "2️⃣ <b>Shortlink Task</b> — 500 Sparks\n"
+        "2️⃣ <b>Verify You Are Human (Captcha)</b> — 500 Sparks\n"
         "━━━━━━━━━━━━━━━━━━━━━━━",
         reply_markup=mission_center_keyboard(),
     )
@@ -277,10 +277,11 @@ async def _render_rewards_screen(user_id: int, message: Message, edit: bool) -> 
         "━━━━━━━━━━━━━━━━━━━━━━━\n"
         "🎁 <b>REWARDS CENTER</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "🎁 <b>Daily Reward Box:</b>\n"
-        "• Completely free, no Sparks required\n"
-        "• Resets every day at midnight IST\n"
-        "• Get a random reward every day!\n"
+        "🎰 <b>Daily Slot Machine:</b>\n"
+        "• Spin the slot machine — 3 tries daily!\n"
+        "• 🏆 Win (Jackpot): <b>60–100 Sparks</b>\n"
+        "• 😅 Lose all 3: Still get <b>30–60 Sparks</b>\n"
+        "• Completely free, resets at midnight IST\n"
         "━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
@@ -370,64 +371,192 @@ async def _render_profile_screen(
 
 
 # ===========================================================================
-# SCREEN 6 — 🎰 Mystery Box  (Phase 4)
-# P0 Fix: query is answered exactly once per code path.
+# SCREEN 6 — 🎰 Daily Slot Machine  (Replaces Mystery Box)
+# ---------------------------------------------------------------------------
+# Flow:
+#   1. User clicks "🎰 Daily Slot Machine" in Rewards Center
+#   2. Cooldown check → if already claimed today, show cooldown msg
+#   3. Send Telegram 🎰 slot machine dice animation
+#   4. Wait ~3 sec for animation to finish
+#   5. Check result: value == 64 → JACKPOT (win), anything else → lose
+#   6. Win on any try → grant 60–100 random Sparks
+#   7. Lose → decrement tries. If tries left, show "Spin Again" button
+#   8. All 3 tries lost → consolation prize: 30–60 random Sparks
+#
+# Telegram 🎰 Slot Machine Values:
+#   Value 64 = three 7️⃣ (Jackpot!) — all other values are non-wins.
+#
+# Session Tracking:
+#   In-memory dict `_slot_sessions` tracks tries remaining per user.
+#   Cleared after win or after all 3 tries exhausted.
+#   Daily cooldown tracked via `last_mystery_box_date` in Firestore.
 # ===========================================================================
 
-_BOX_TIERS = [
-    (25, 75, 50),  # 50% — Common
-    (100, 300, 30),  # 30% — Uncommon
-    (350, 750, 15),  # 15% — Rare
-    (1000, 2000, 5),  #  5% — Legendary
-]
+# ── Slot Machine Constants ────────────────────────────────────────────────
+_SLOT_JACKPOT_VALUE = 64      # Telegram's jackpot result for 🎰 dice
+_SLOT_MAX_TRIES = 3           # max spins per day
+_SLOT_WIN_MIN = 60            # Sparks range on win (jackpot)
+_SLOT_WIN_MAX = 100
+_SLOT_LOSE_MIN = 30           # consolation prize range (all 3 lost)
+_SLOT_LOSE_MAX = 60
 
-_BOX_MINS = [t[0] for t in _BOX_TIERS]
-_BOX_MAXS = [t[1] for t in _BOX_TIERS]
-_BOX_WEIGHTS = [t[2] for t in _BOX_TIERS]
+# In-memory session: user_id → tries remaining today
+_slot_sessions: dict[int, int] = {}
+
+
+def _spin_again_kb() -> InlineKeyboardMarkup:
+    """Keyboard with a 'Spin Again' button and a Back button."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🎰 Spin Again",
+                    callback_data="action_mystery_box",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🏠 Back to Dashboard",
+                    callback_data="go_dashboard",
+                ),
+            ],
+        ]
+    )
 
 
 @router.callback_query(F.data == "action_mystery_box")
-async def cb_mystery_box(query: CallbackQuery) -> None:
-    if not query.message or not hasattr(query.message, "edit_text"):
+async def cb_daily_slot_machine(query: CallbackQuery) -> None:
+    """Daily Slot Machine — 3 tries, jackpot (64) = win, else lose."""
+    if not query.message:
         await query.answer()
         return
 
-    # FIX: Answer immediately to prevent Telegram timeout during Firestore transaction
-    await query.answer("🎰 Opening Mystery Box...", show_alert=False)
-
     user_id = query.from_user.id
 
-    # ── Weighted prize draw ──
-    chosen_idx = random.choices(range(len(_BOX_TIERS)), weights=_BOX_WEIGHTS, k=1)[0]
-    won_sparks = random.randint(_BOX_MINS[chosen_idx], _BOX_MAXS[chosen_idx])
+    # ── 1. Cooldown check (already completed today?) ──────────────────────
+    user_data = await get_user(user_id)
+    if not user_data:
+        await query.answer("⚠️ Profile not found. Please /start.", show_alert=True)
+        return
 
-    # ── Atomic DB writes ──
-    # FIX: We rely completely on the transaction to prevent race conditions and double reads
+    today_str = get_ist_now().strftime("%Y-%m-%d")
+    if user_data.get("last_mystery_box_date") == today_str:
+        # Check if user has tries remaining (in-memory session)
+        tries_left = _slot_sessions.get(user_id, 0)
+        if tries_left <= 0:
+            await query.answer(
+                "😅 Aaj ka Daily Slot Machine pura ho chuka! Kal wapas aana. 🌙",
+                show_alert=True,
+            )
+            return
+
+    # ── 2. Initialize session if first try today ──────────────────────────
+    if user_id not in _slot_sessions:
+        _slot_sessions[user_id] = _SLOT_MAX_TRIES
+
+    tries_left = _slot_sessions[user_id]
+    if tries_left <= 0:
+        await query.answer(
+            "😅 Aaj ke saare tries khatam! Kal wapas aana. 🌙",
+            show_alert=True,
+        )
+        return
+
+    await query.answer(f"🎰 Spinning... (Try {_SLOT_MAX_TRIES - tries_left + 1}/{_SLOT_MAX_TRIES})")
+
+    # ── 3. Send Telegram 🎰 slot machine dice animation ──────────────────
     try:
-        await open_mystery_box_transactional(user_id, won_sparks=won_sparks)
-    except UserNotFoundError:
-        await query.message.edit_text("⚠️ Profile not found. Please use /start.")
-        return
-    except CooldownActiveError:
-        logger.warning(
-            "Spam/Duplicate blocked for user %s: Mystery Box already claimed today.",
-            user_id,
-        )
         await query.message.edit_text(
-            "😅 Aaj ka Daily Reward tum le chuke ho! Kal wapas aana. 🌙",
-            reply_markup=back_to_dashboard_keyboard(),
+            f"🎰 <b>DAILY SLOT MACHINE</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"🎯 Try <b>{_SLOT_MAX_TRIES - tries_left + 1}</b> of <b>{_SLOT_MAX_TRIES}</b>\n\n"
+            f"<i>Spinning the reels...</i> 🎰"
+        )
+    except Exception:
+        pass  # edit_text can fail if message was already deleted
+
+    dice_msg = await query.message.answer_dice(emoji="🎰")
+    dice_value = dice_msg.dice.value
+
+    # ── 4. Wait for slot machine animation (~3 sec) ───────────────────────
+    import asyncio
+    await asyncio.sleep(3)
+
+    # ── 5. Decrement try count ────────────────────────────────────────────
+    _slot_sessions[user_id] = tries_left - 1
+    remaining = _slot_sessions[user_id]
+
+    # ── 6. Check result ───────────────────────────────────────────────────
+    if dice_value == _SLOT_JACKPOT_VALUE:
+        # 🏆 JACKPOT! User won — grant 60-100 Sparks
+        won_sparks = random.randint(_SLOT_WIN_MIN, _SLOT_WIN_MAX)
+
+        try:
+            await open_mystery_box_transactional(user_id, won_sparks=won_sparks)
+        except CooldownActiveError:
+            # Edge case: another device claimed it between tries
+            await query.message.answer(
+                "✅ Aaj ka reward pehle hi claim ho chuka hai!",
+                reply_markup=back_to_dashboard_keyboard(),
+            )
+            _slot_sessions.pop(user_id, None)
+            return
+        except UserNotFoundError:
+            await query.message.answer("⚠️ Profile not found. Please /start.")
+            return
+
+        _slot_sessions.pop(user_id, None)  # Clear session
+
+        await query.message.answer(
+            "━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "🎰 <b>JACKPOT! 🏆</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "🎯 Three 7️⃣s in a row!\n"
+            f"🎉 Tujhe mila: <b>{won_sparks} Sparks!</b> ⚡\n\n"
+            "Kal wapas aana naye slot ke liye! 😄\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━",
+            reply_markup=mystery_box_result_keyboard(),
         )
         return
 
-    # ── Edit message on success ──
-    text = (
-        "━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "🎁 <b>DAILY REWARD UNLOCKED!</b>\n\n"
-        f"🎉 Tujhe mila: <b>{won_sparks} Sparks!</b> ⚡\n\n"
-        "Kal wapas aana naye reward ke liye! 😄\n"
-        "━━━━━━━━━━━━━━━━━━━━━━━"
-    )
-    await query.message.edit_text(text, reply_markup=mystery_box_result_keyboard())
+    # ── 7. Lost this try ──────────────────────────────────────────────────
+    if remaining > 0:
+        # Still have tries left — show Spin Again button
+        await query.message.answer(
+            f"😅 <b>No Jackpot this time!</b>\n\n"
+            f"🎯 Tries remaining: <b>{remaining}/{_SLOT_MAX_TRIES}</b>\n\n"
+            "<i>Try again — you might hit the jackpot! 🍀</i>",
+            reply_markup=_spin_again_kb(),
+        )
+    else:
+        # All 3 tries exhausted — consolation prize: 30-60 Sparks
+        consolation = random.randint(_SLOT_LOSE_MIN, _SLOT_LOSE_MAX)
+
+        try:
+            await open_mystery_box_transactional(user_id, won_sparks=consolation)
+        except CooldownActiveError:
+            await query.message.answer(
+                "✅ Aaj ka reward pehle hi claim ho chuka hai!",
+                reply_markup=back_to_dashboard_keyboard(),
+            )
+            _slot_sessions.pop(user_id, None)
+            return
+        except UserNotFoundError:
+            await query.message.answer("⚠️ Profile not found. Please /start.")
+            return
+
+        _slot_sessions.pop(user_id, None)  # Clear session
+
+        await query.message.answer(
+            "━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "🎰 <b>BETTER LUCK NEXT TIME!</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "😅 Teeno tries mein jackpot nahi aaya...\n"
+            f"🎁 Consolation Prize: <b>{consolation} Sparks!</b> ⚡\n\n"
+            "Kal wapas aana — jackpot zaroor milega! 🍀\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━",
+            reply_markup=mystery_box_result_keyboard(),
+        )
 
 
 # ===========================================================================
@@ -615,6 +744,70 @@ async def cb_order_history_page(query: CallbackQuery) -> None:
     except (IndexError, ValueError):
         page = 0
     await _render_order_history(query.from_user.id, query.message, edit=True, page=page)
+
+
+# ===========================================================================
+# User Transaction History — Shared Service
+# ---------------------------------------------------------------------------
+# Uses the shared ``services.transaction_history`` module for rendering.
+# User-specific: user_id is taken from ``query.from_user.id``, and the
+# back button returns to the Profile screen.
+#
+# Callbacks handled:
+#   nav_my_transactions     — entry point from profile keyboard
+#   my_tx_page:{page}       — pagination (prev/next navigation)
+# ===========================================================================
+
+from instavault.services.transaction_history import (
+    render_transaction_page,
+    build_transaction_keyboard,
+)
+
+
+@router.callback_query(F.data == "nav_my_transactions")
+async def cb_my_transactions(query: CallbackQuery) -> None:
+    """Show the logged-in user's transaction history (page 0)."""
+    if not query.message or not hasattr(query.message, "edit_text"):
+        await query.answer()
+        return
+    await query.answer()
+
+    uid = query.from_user.id
+    text, _total, total_pages = await render_transaction_page(uid, page=0)
+    kb = build_transaction_keyboard(
+        user_id=uid,
+        page=0,
+        total_pages=total_pages,
+        back_callback="nav_profile",
+        callback_prefix="my_tx_page",
+    )
+    await query.message.edit_text(text, reply_markup=kb)
+
+
+@router.callback_query(F.data.startswith("my_tx_page:"))
+async def cb_my_tx_page(query: CallbackQuery) -> None:
+    """Pagination: navigate between the user's transaction history pages."""
+    if not query.message or not hasattr(query.message, "edit_text"):
+        await query.answer()
+        return
+    await query.answer()
+
+    uid = query.from_user.id
+    # my_tx_page:{page}
+    try:
+        page = int(query.data.split(":")[1])
+    except (IndexError, ValueError):
+        page = 0
+
+    text, _total, total_pages = await render_transaction_page(uid, page=page)
+    kb = build_transaction_keyboard(
+        user_id=uid,
+        page=page,
+        total_pages=total_pages,
+        back_callback="nav_profile",
+        callback_prefix="my_tx_page",
+    )
+    await query.message.edit_text(text, reply_markup=kb)
 
 
 # ===========================================================================

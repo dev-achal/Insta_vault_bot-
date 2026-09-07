@@ -124,7 +124,6 @@ _RESET_FIELDS: dict[str, tuple[str, str, Any]] = {
 
 # ── Coming-Soon Callback Data Set ─────────────────────────────────────────
 _COMING_SOON_UC = {
-    "uc_transactions",
     "uc_analytics",
     "uc_rank_system",
 }
@@ -304,7 +303,7 @@ def _build_control_keyboard(
                     text="📦 View Orders", callback_data=f"uc_orders:{uid}:0"
                 ),
                 InlineKeyboardButton(
-                    text="💰 Transactions 🔜", callback_data="uc_transactions"
+                    text="💰 Transactions", callback_data=f"uc_tx:{uid}:0"
                 ),
             ],
             # Row 2 — Spark Economy: Add & Deduct
@@ -374,7 +373,7 @@ async def _show_user_control(
             f"⚠️ <b>User Not Found.</b>\n"
             f"No record exists for ID: <code>{uid}</code>"
         )
-        from .keyboards import admin_back_keyboard
+        from instavault.keyboards.admin import admin_back_keyboard
 
         if edit:
             await message.edit_text(text, reply_markup=admin_back_keyboard())
@@ -449,7 +448,7 @@ async def cmd_cancel_user_control(
 ) -> None:
     """Cancel any active User Control Center FSM flow and return to dashboard."""
     await state.clear()
-    from .keyboards import admin_dashboard_keyboard
+    from instavault.keyboards.admin import admin_dashboard_keyboard
 
     await message.answer(
         "❌ User Control operation cancelled.",
@@ -671,6 +670,80 @@ async def cb_orders_page(query: CallbackQuery) -> None:
 
     await query.answer()
     await _render_admin_orders(uid, query.message, edit=True, page=page)
+
+
+# ===========================================================================
+# §4b  VIEW TRANSACTIONS — PAGINATED (shared service)
+# ---------------------------------------------------------------------------
+# Uses the shared ``services.transaction_history`` module for rendering.
+# Admin-specific: target user ID is encoded in pagination callbacks,
+# and the back button returns to the User Control panel.
+#
+# Callbacks handled:
+#   uc_tx:{uid}:{page}       — initial transaction list view
+#   uc_tx_page:{uid}:{page}  — pagination (prev/next navigation)
+# ===========================================================================
+
+from instavault.services.transaction_history import (
+    render_transaction_page,
+    build_transaction_keyboard,
+)
+
+
+@router.callback_query(F.data.startswith("uc_tx:"))
+async def cb_view_transactions(query: CallbackQuery) -> None:
+    """Show paginated transaction history for a target user."""
+    if not _can_edit(query):
+        await query.answer()
+        return
+    if not _is_admin(query.from_user.id):
+        await query.answer("⛔ Access Denied.", show_alert=True)
+        return
+
+    # uc_tx:{uid}:{page}
+    parts = query.data.split(":")
+    uid = parts[1]
+    page = int(parts[2]) if len(parts) > 2 else 0
+
+    await query.answer()
+
+    text, _total, total_pages = await render_transaction_page(uid, page=page)
+    kb = build_transaction_keyboard(
+        user_id=uid,
+        page=page,
+        total_pages=total_pages,
+        back_callback=f"uc_profile:{uid}",
+        callback_prefix="uc_tx_page",
+    )
+    await query.message.edit_text(text, reply_markup=kb)
+
+
+@router.callback_query(F.data.startswith("uc_tx_page:"))
+async def cb_tx_page(query: CallbackQuery) -> None:
+    """Pagination: navigate between transaction history pages (admin)."""
+    if not _can_edit(query):
+        await query.answer()
+        return
+    if not _is_admin(query.from_user.id):
+        await query.answer("⛔ Access Denied.", show_alert=True)
+        return
+
+    # uc_tx_page:{uid}:{page}
+    parts = query.data.split(":")
+    uid = parts[1]
+    page = int(parts[2]) if len(parts) > 2 else 0
+
+    await query.answer()
+
+    text, _total, total_pages = await render_transaction_page(uid, page=page)
+    kb = build_transaction_keyboard(
+        user_id=uid,
+        page=page,
+        total_pages=total_pages,
+        back_callback=f"uc_profile:{uid}",
+        callback_prefix="uc_tx_page",
+    )
+    await query.message.edit_text(text, reply_markup=kb)
 
 
 # ===========================================================================

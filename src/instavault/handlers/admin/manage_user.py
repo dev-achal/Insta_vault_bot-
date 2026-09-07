@@ -106,7 +106,7 @@ async def cb_start_manage_user(query: CallbackQuery, state: FSMContext) -> None:
 async def cmd_cancel_manage_user(message: Message, state: FSMContext) -> None:
     """Cancel user management flow."""
     await state.clear()
-    from .keyboards import admin_dashboard_keyboard
+    from instavault.keyboards.admin import admin_dashboard_keyboard
 
     await message.answer(
         "❌ User management flow cancelled.", reply_markup=admin_dashboard_keyboard()

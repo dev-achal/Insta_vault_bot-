@@ -49,12 +49,12 @@ router = Router(name="tasks_shortener")
 
 
 def _mission_link_keyboard(short_url: str) -> InlineKeyboardMarkup:
-    """Inline keyboard with the GPLinks mission URL button."""
+    """Inline keyboard with the Captcha Verification URL button."""
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="🔗 Complete Mission",
+                    text="🛡️ Click Here to Verify (Captcha)",
                     url=short_url,
                 ),
             ],
@@ -69,7 +69,7 @@ def _mission_link_keyboard(short_url: str) -> InlineKeyboardMarkup:
 
 
 # ===========================================================================
-# ENTRY POINT 1 — User clicks "🔗 Shortlink Task" in Mission Center
+# ENTRY POINT 1 — User clicks "🛡️ Verify You Are Human" in Mission Center
 # ===========================================================================
 
 
@@ -95,10 +95,10 @@ async def cb_shortener_task(query: CallbackQuery) -> None:
     if user_data.get("last_shortener_task_date") == today_str:
         await query.message.edit_text(
             "━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "✅ <b>SHORTLINK TASK COMPLETE!</b>\n"
+            "✅ <b>VERIFICATION COMPLETED!</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "🎉 Aaj ka Shortlink Task pehle hi complete ho chuka hai.\n"
-            "Kal naye task ke liye wapas aana! 🌅\n"
+            "🎉 Aaj ka Human Verification (Captcha) aap pehle hi complete kar chuke hain.\n"
+            "Kal naye verification aur Sparks ke liye wapas aana! 🌅\n"
             "━━━━━━━━━━━━━━━━━━━━━━━",
             reply_markup=back_to_dashboard_keyboard(),
         )
@@ -142,19 +142,21 @@ async def cb_shortener_task(query: CallbackQuery) -> None:
 
 
 async def _show_mission_screen(query: CallbackQuery, short_url: str) -> None:
-    """Render the mission instruction screen with the GPLinks button."""
+    """Render the human verification captcha screen with the verification button."""
     reward = rewards.SHORTENER_TASK_REWARD
     await query.message.edit_text(
         "━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "🔗 <b>SHORTLINK TASK</b>\n"
+        "🛡️ <b>HUMAN VERIFICATION (CAPTCHA)</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"🪙 <b>Reward:</b> {reward} Sparks\n"
-        "⏰ <b>Time Limit:</b> 30 minutes\n\n"
-        "📋 <b>Kya karna hai:</b>\n"
-        "→ Neeche button par click karo\n"
-        "→ Page load hone do aur complete karo\n"
-        "→ Automatic wapas bot pe aa jaoge\n"
-        "→ Sparks credit ho jayenge! ⚡\n"
+        "Bot security aur anti-cheat check ke liye human verification zaroori hai.\n"
+        "Quick verification complete karein aur instant reward payein!\n\n"
+        f"🪙 <b>Verification Reward:</b> {reward} Sparks\n"
+        "⏰ <b>Validity:</b> 30 minutes\n\n"
+        "📋 <b>Verification Steps:</b>\n"
+        "1️⃣ Neeche <b>'🛡️ Click Here to Verify (Captcha)'</b> par click karo\n"
+        "2️⃣ Browser mein Captcha verification complete karo\n"
+        "3️⃣ Verification hote hi automatic bot par redirect ho jaoge\n"
+        f"4️⃣ Account mein <b>+{reward} Sparks</b> jud jayenge! ⚡\n"
         "━━━━━━━━━━━━━━━━━━━━━━━",
         reply_markup=_mission_link_keyboard(short_url),
     )
@@ -179,9 +181,9 @@ async def handle_shortener_deeplink(message: Message, user_id: int, token: str) 
 
     if not is_valid:
         await message.answer(
-            "⚠️ <b>Invalid or Expired Mission Link</b>\n\n"
-            "Yeh link expire ho chuka hai ya pehle se use ho chuka hai.\n"
-            "Dashboard se naya task start karein.",
+            "⚠️ <b>Invalid or Expired Verification Link</b>\n\n"
+            "Yeh verification link expire ho chuka hai ya pehle se use ho chuka hai.\n"
+            "Mission Center se dobara verification link generate karein.",
             reply_markup=back_to_dashboard_keyboard(),
         )
         return
@@ -192,7 +194,7 @@ async def handle_shortener_deeplink(message: Message, user_id: int, token: str) 
     today_str = get_ist_now().strftime("%Y-%m-%d")
     if user_data and user_data.get("last_shortener_task_date") == today_str:
         await message.answer(
-            "✅ Aaj ka Shortlink Task pehle hi complete ho chuka hai!",
+            "✅ Aaj ka Human Verification pehle hi complete ho chuka hai!",
             reply_markup=back_to_dashboard_keyboard(),
         )
         return
@@ -209,7 +211,7 @@ async def handle_shortener_deeplink(message: Message, user_id: int, token: str) 
             exc_info=True,
         )
         await message.answer(
-            "⚠️ Task verify ho gaya lekin reward credit mein error aaya.\n"
+            "⚠️ Verification verify ho gaya lekin reward credit mein error aaya.\n"
             "Kripya admin se contact karein.",
             reply_markup=back_to_dashboard_keyboard(),
         )
@@ -217,11 +219,12 @@ async def handle_shortener_deeplink(message: Message, user_id: int, token: str) 
 
     await message.answer(
         "━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "🎉 <b>MISSION SUCCESSFUL!</b>\n"
+        "🎉 <b>VERIFICATION SUCCESSFUL!</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "✅ Aapka Human Verification successfully verify ho gaya!\n"
         f"⚡ <b>+{reward} Sparks</b> aapke account mein add ho gaye!\n\n"
         "Ab aap Instagram Views order kar sakte hain. 🚀\n"
-        "Kal naye task ke liye wapas aana!\n"
+        "Kal dobara verification karke aur Sparks kama sakte hain!\n"
         "━━━━━━━━━━━━━━━━━━━━━━━",
         reply_markup=back_to_dashboard_keyboard(),
     )

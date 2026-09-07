@@ -27,7 +27,7 @@ from instavault.database.db_manager import (
     update_order_status,
     delete_link_lock,
 )
-from instavault.keyboards.inline import (
+from instavault.keyboards.admin import (
     admin_order_alert_keyboard,
     admin_check_status_keyboard,
 )
