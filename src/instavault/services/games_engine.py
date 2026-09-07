@@ -116,19 +116,21 @@ async def check_coin_flip_eligibility(user_id: int | str) -> tuple[bool, str]:
 
     # ── Cooldown check ────────────────────────────────────────────────────
     last_flip = user_data.get("last_coin_flip_date")
-    today_ist = get_ist_now().date()
+    today_str = get_ist_now().date().strftime("%Y-%m-%d")
 
     if last_flip is not None:
-        # Firestore stores datetime; extract date portion
-        if hasattr(last_flip, "date"):
-            last_flip_date = last_flip.date()
-        elif isinstance(last_flip, date):
-            last_flip_date = last_flip
+        # Redis cache returns strings; Firestore returns datetime/date.
+        # Handle all cases: datetime → date → string → extract YYYY-MM-DD
+        if hasattr(last_flip, "strftime"):
+            # datetime or date object from Firestore
+            last_flip_str = last_flip.strftime("%Y-%m-%d")
+        elif isinstance(last_flip, str):
+            # String from Redis cache — extract date part (YYYY-MM-DD)
+            last_flip_str = last_flip[:10]
         else:
-            # Fallback: treat as string (should not happen)
-            last_flip_date = None
+            last_flip_str = None
 
-        if last_flip_date == today_ist:
+        if last_flip_str == today_str:
             return False, (
                 "⏳ <b>Cooldown Active!</b>\n\n"
                 "You've already used your free Coin Flip today.\n"
@@ -172,7 +174,8 @@ async def process_coin_flip_result(
     )
 
     # ── 3. Update cooldown timestamp ──────────────────────────────────────
-    await update_user(user_id, {"last_coin_flip_date": get_ist_now()})
+    today_str = get_ist_now().strftime("%Y-%m-%d")
+    await update_user(user_id, {"last_coin_flip_date": today_str})
 
     # ── 4. Fetch updated balance for display ──────────────────────────────
     updated_user = await get_user(user_id)
@@ -368,13 +371,21 @@ async def check_quiz_eligibility(user_id: int | str) -> tuple[bool, str]:
     today_str = get_ist_now().date().strftime("%Y-%m-%d")
     last_quiz = user_data.get("last_quiz_date")
 
-    if last_quiz == today_str:
-        return False, (
-            "⏳ <b>Cooldown Active!</b>\n\n"
-            "You've already completed today's Quiz Trivia.\n"
-            "Come back tomorrow for a new set of questions! 🧠\n\n"
-            "<i>Resets daily at midnight IST.</i>"
-        )
+    if last_quiz is not None:
+        if hasattr(last_quiz, "strftime"):
+            last_quiz_str = last_quiz.strftime("%Y-%m-%d")
+        elif isinstance(last_quiz, str):
+            last_quiz_str = last_quiz[:10]
+        else:
+            last_quiz_str = None
+
+        if last_quiz_str == today_str:
+            return False, (
+                "⏳ <b>Cooldown Active!</b>\n\n"
+                "You've already completed today's Quiz Trivia.\n"
+                "Come back tomorrow for a new set of questions! 🧠\n\n"
+                "<i>Resets daily at midnight IST.</i>"
+            )
 
     return True, "✅ Eligible"
 

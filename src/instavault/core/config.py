@@ -41,6 +41,7 @@ settings = Settings()
 # ---------------------------------------------------------
 
 BOT_TOKEN = settings.BOT_TOKEN
+BOT_USERNAME: str = ""
 APK_FILE_ID = settings.APK_FILE_ID
 ADMIN_IDS = [
     int(x.strip()) for x in settings.ADMIN_IDS.split(",") if x.strip().isdigit()
