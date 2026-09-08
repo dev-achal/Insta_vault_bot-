@@ -65,7 +65,7 @@ async def render_games_hub(user_id: int | str, first_name: str) -> str:
         "🧠 <b>Quiz Trivia</b>  •  <i>Answer & Earn</i>\n"
         "   Answer 3 questions → Claim <b>250 Sparks</b>!\n"
         "   🕐 Limit: 1 quiz per day\n\n"
-        "🎰 <b>Daily Spin</b>  •  <i>Coming Soon</i>\n\n"
+        "⚔️ <b>Bot Battle Arena</b>  •  <i>3 Rounds vs Bot (Coming Soon)</i>\n\n"
         "🛡️ <b>Human Verification</b>  •  <i>Anti-Bot Check</i>\n"
         "   Verify you are human → Claim <b>500 Sparks</b>!\n\n"
         "<i>Select an option below to start!</i>"

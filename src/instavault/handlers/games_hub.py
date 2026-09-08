@@ -606,6 +606,6 @@ _GAMES_COMING_SOON = {"game_daily_spin"}
 async def cb_game_coming_soon(query: CallbackQuery) -> None:
     """Show 'coming soon' alert for games still under development."""
     await query.answer(
-        "🚧 This game is currently under development. Stay tuned!",
+        "🚧 ⚔️ Bot Battle Arena (3 Rounds vs Bot) under development hai. Bahut jald aayega! Stay tuned! 🔥",
         show_alert=True,
     )

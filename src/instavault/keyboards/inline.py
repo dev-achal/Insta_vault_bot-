@@ -153,7 +153,7 @@ def games_hub_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(
-                    text="🎰 Daily Spin",
+                    text="⚔️ Bot Battle (3 Rounds)",
                     callback_data="game_daily_spin",
                 ),
                 InlineKeyboardButton(
