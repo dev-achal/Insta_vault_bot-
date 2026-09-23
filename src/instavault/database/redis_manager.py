@@ -84,6 +84,57 @@ async def close_redis() -> None:
 
 
 # ===========================================================================
+# REDIS SERVER INFO (Admin Monitoring)
+# ---------------------------------------------------------------------------
+# Fetches Redis server metrics via INFO and DBSIZE commands.
+# Used by the admin panel's Cache & DB Stats dashboard.
+# ===========================================================================
+
+
+async def get_redis_info() -> dict[str, Any]:
+    """Fetch Redis server metrics for the admin monitoring dashboard.
+
+    Returns:
+        Dict with: memory_used_human, memory_used_bytes, total_keys,
+        uptime_seconds, connected_clients, redis_version.
+        Returns safe defaults on error.
+    """
+    defaults: dict[str, Any] = {
+        "memory_used_human": "N/A",
+        "memory_used_bytes": 0,
+        "total_keys": 0,
+        "uptime_seconds": 0,
+        "connected_clients": 0,
+        "redis_version": "N/A",
+    }
+    try:
+        client = get_redis()
+
+        # Pipeline for efficiency — 3 commands in 1 round-trip
+        pipe = client.pipeline(transaction=False)
+        pipe.info("memory")
+        pipe.info("server")
+        pipe.dbsize()
+        results = await pipe.execute()
+
+        memory_info = results[0]
+        server_info = results[1]
+        db_size = results[2]
+
+        return {
+            "memory_used_human": memory_info.get("used_memory_human", "N/A"),
+            "memory_used_bytes": memory_info.get("used_memory", 0),
+            "total_keys": int(db_size) if db_size else 0,
+            "uptime_seconds": server_info.get("uptime_in_seconds", 0),
+            "connected_clients": memory_info.get("connected_clients", 0),
+            "redis_version": server_info.get("redis_version", "N/A"),
+        }
+    except Exception as e:
+        logger.error("Failed to fetch Redis server info: %s", e)
+        return defaults
+
+
+# ===========================================================================
 # CACHING LAYER (FAIL-SAFE)
 # ===========================================================================
 

@@ -44,6 +44,9 @@ def admin_dashboard_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton(
                 text="🎯 User Control Center", callback_data="uc_start"
             ),
+            InlineKeyboardButton(
+                text="📊 Cache & DB Stats", callback_data="admin_cache_stats"
+            ),
         ],
         [InlineKeyboardButton(text="🔙 Back to Bot", callback_data="nav_dashboard")],
     ]

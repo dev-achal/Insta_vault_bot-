@@ -62,6 +62,43 @@ ACTIVE_LINK_LOCKS_COL = "active_link_locks"
 
 
 # ===========================================================================
+# In-Memory Cache Performance Tracker
+# ---------------------------------------------------------------------------
+# Tracks cache hits/misses per bot session. Resets on restart — this is
+# intentional because session-level metrics are more actionable than
+# cumulative all-time numbers. Zero overhead (just += 1 in memory).
+# ===========================================================================
+
+import time as _time
+
+_cache_stats: dict[str, int | float] = {
+    "hits": 0,
+    "misses": 0,
+    "started_at": _time.time(),
+}
+
+
+def get_cache_stats() -> dict[str, int | float]:
+    """Return computed cache performance metrics for the current session.
+
+    Returns:
+        Dict with: hits, misses, total, hit_rate (%), miss_rate (%),
+        session_seconds (uptime since boot).
+    """
+    hits = _cache_stats["hits"]
+    misses = _cache_stats["misses"]
+    total = hits + misses
+    return {
+        "hits": hits,
+        "misses": misses,
+        "total": total,
+        "hit_rate": round((hits / total) * 100, 1) if total > 0 else 0.0,
+        "miss_rate": round((misses / total) * 100, 1) if total > 0 else 0.0,
+        "session_seconds": _time.time() - _cache_stats["started_at"],
+    }
+
+
+# ===========================================================================
 # Custom Exceptions
 # ===========================================================================
 
@@ -105,10 +142,12 @@ async def get_user(user_id: int | str) -> dict[str, Any] | None:
     # 1. Try Redis Cache (Fail-Safe Read-Through)
     cached = await get_cached_user_data(user_id)
     if cached is not None:
+        _cache_stats["hits"] += 1
         logger.info("Cache hit for user %s", user_id)
         return cached
 
     # 2. Cache Miss - Fetch from Firestore
+    _cache_stats["misses"] += 1
     logger.info("Cache miss for user %s. Fetching from Firestore.", user_id)
     db = get_db()
     doc = await db.collection(USERS_COL).document(str(user_id)).get()
