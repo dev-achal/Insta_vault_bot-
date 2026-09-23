@@ -44,13 +44,29 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 
 
-async def render_games_hub(user_id: int | str, first_name: str) -> str:
-    """Fetch user data and render the Games & Earn hub message."""
+async def render_games_hub(
+    user_id: int | str, first_name: str, *, verified_today: bool = False
+) -> str:
+    """Fetch user data and render the Games & Earn hub message.
+
+    Args:
+        verified_today: If True, shows 'Verified Today' badge instead of
+            the Human Verification prompt (button is also hidden).
+    """
     user_data = await get_user(user_id)
     if not user_data:
         return "⚠️ Profile not found. Please send /start."
 
     sparks = user_data.get("spark_balance", 0)
+
+    # ── Build verification status line ────────────────────────────────
+    if verified_today:
+        verify_line = "🛡️ <b>Human Verification</b>  •  ✅ <i>Verified Today!</i>\n\n"
+    else:
+        verify_line = (
+            "🛡️ <b>Human Verification</b>  •  <i>Anti-Bot Check</i>\n"
+            "   Verify you are human → Claim <b>500 Sparks</b>!\n\n"
+        )
 
     text = (
         "🎮 <b>GAMES & EARN HUB</b>\n\n"
@@ -66,8 +82,7 @@ async def render_games_hub(user_id: int | str, first_name: str) -> str:
         "   Answer 3 questions → Claim <b>250 Sparks</b>!\n"
         "   🕐 Limit: 1 quiz per day\n\n"
         "⚔️ <b>Bot Battle Arena</b>  •  <i>3 Rounds vs Bot (Coming Soon)</i>\n\n"
-        "🛡️ <b>Human Verification</b>  •  <i>Anti-Bot Check</i>\n"
-        "   Verify you are human → Claim <b>500 Sparks</b>!\n\n"
+        f"{verify_line}"
         "<i>Select an option below to start!</i>"
     )
 

@@ -48,7 +48,7 @@ from instavault.services.mission_token import (
     verify_and_consume_verify,
 )
 from instavault.services.shortener_api import ShortenerApiError, create_short_link
-from instavault.database.db_manager import complete_quiz_task, get_user
+from instavault.database.db_manager import complete_quiz_task, get_user, update_user
 from instavault.keyboards.inline import games_hub_keyboard
 from instavault.utils.helpers import get_ist_now
 
@@ -92,9 +92,30 @@ async def _show_verify_human_screen(query: CallbackQuery) -> None:
     """Generate shortener link and show 'Verify You're Human' screen.
 
     Called when user tries to play a game that has daily limit reached.
-    Forces user through ad flow before showing the cooldown message.
+    If user already verified today (from ANY source — 500 Sparks shortener,
+    vf_ cooldown verify, etc.), skip the verify screen and show direct
+    'Day Limit Reached' message instead.
     """
     user_id = query.from_user.id
+
+    # ── Already verified today? Skip verify, show direct limit msg ────
+    user_data = await get_user(user_id)
+    today_str = get_ist_now().date().strftime("%Y-%m-%d")
+    if user_data and user_data.get("last_shortener_task_date") == today_str:
+        await query.message.edit_text(
+            "━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "⏳ <b>DAILY LIMIT REACHED!</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "✅ Aaj ka human verification ho chuka hai.\n"
+            "Aaj ke saare game tries bhi khatam ho chuke hain.\n\n"
+            "Kal wapas aana naye games ke liye! 🌅\n\n"
+            "<i>Resets daily at midnight IST.</i>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━",
+            reply_markup=_back_to_games_kb(),
+        )
+        return
+
+    # ── Not yet verified — show verify screen with shortener link ─────
     bot_username = config.BOT_USERNAME or "InstaVaultBot"
 
     # Check for existing pending token
@@ -159,9 +180,17 @@ async def cb_nav_games_hub(query: CallbackQuery) -> None:
     user_id = query.from_user.id
     first_name = query.from_user.first_name or "Player"
 
+    # ── Check if user already verified today ──────────────────────────
+    user_data = await get_user(user_id)
+    today_str = get_ist_now().date().strftime("%Y-%m-%d")
+    verified_today = (
+        user_data is not None
+        and user_data.get("last_shortener_task_date") == today_str
+    )
+
     # Service renders the text — no hardcoded strings here
-    text = await render_games_hub(user_id, first_name)
-    kb = games_hub_keyboard()
+    text = await render_games_hub(user_id, first_name, verified_today=verified_today)
+    kb = games_hub_keyboard(verified_today=verified_today)
 
     await query.message.edit_text(text, reply_markup=kb)
 
@@ -574,7 +603,12 @@ async def handle_verify_deeplink(
         )
         return
 
-    # Verification successful — show daily limit message
+    # Verification successful — mark as verified today so all verify
+    # buttons disappear (same field used by 500 Sparks shortener)
+    today_str = get_ist_now().date().strftime("%Y-%m-%d")
+    await update_user(user_id, {"last_shortener_task_date": today_str})
+
+    # Show daily limit message
     await message.answer(
         "━━━━━━━━━━━━━━━━━━━━━━━\n"
         "✅ <b>VERIFICATION SUCCESSFUL!</b>\n"

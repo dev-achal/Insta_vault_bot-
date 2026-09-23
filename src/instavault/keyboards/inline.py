@@ -141,40 +141,49 @@ def dashboard_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def games_hub_keyboard() -> InlineKeyboardMarkup:
-    """Keyboard for the Games & Earn Hub."""
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="🎲 Coin Flip (Free Daily)",
-                    callback_data="game_coin_flip_menu",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="⚔️ Bot Battle (3 Rounds)",
-                    callback_data="game_daily_spin",
-                ),
-                InlineKeyboardButton(
-                    text="🧠 Quiz (250 Sparks)",
-                    callback_data="game_quiz",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🛡️ Verify You Are Human (+500 Sparks)",
-                    callback_data="task_shortener_start",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🔙 Back to Mission Center",
-                    callback_data="nav_mission",
-                ),
-            ],
-        ]
-    )
+def games_hub_keyboard(verified_today: bool = False) -> InlineKeyboardMarkup:
+    """Keyboard for the Games & Earn Hub.
+
+    Args:
+        verified_today: If True, the 'Verify You Are Human' button is
+            hidden because user already completed human verification today.
+    """
+    rows = [
+        [
+            InlineKeyboardButton(
+                text="🎲 Coin Flip (Free Daily)",
+                callback_data="game_coin_flip_menu",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="⚔️ Bot Battle (3 Rounds)",
+                callback_data="game_daily_spin",
+            ),
+            InlineKeyboardButton(
+                text="🧠 Quiz (250 Sparks)",
+                callback_data="game_quiz",
+            ),
+        ],
+    ]
+
+    # ── Only show verify button if NOT yet verified today ──────────────
+    if not verified_today:
+        rows.append([
+            InlineKeyboardButton(
+                text="🛡️ Verify You Are Human (+500 Sparks)",
+                callback_data="task_shortener_start",
+            ),
+        ])
+
+    rows.append([
+        InlineKeyboardButton(
+            text="🔙 Back to Mission Center",
+            callback_data="nav_mission",
+        ),
+    ])
+
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def mission_center_keyboard() -> InlineKeyboardMarkup:
